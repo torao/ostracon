@@ -33,7 +33,13 @@ package protoio
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/hex"
+	"fmt"
+	"github.com/line/ostracon/proto/ostracon/p2p"
+	"github.com/line/ostracon/proto/ostracon/types"
 	"io"
+	"reflect"
+	"strings"
 
 	"github.com/gogo/protobuf/proto"
 )
@@ -64,6 +70,7 @@ func (w *varintWriter) WriteMsg(msg proto.Message) (int, error) {
 				return 0, err
 			}
 			_, err = w.w.Write(w.buffer[:lenOff+n])
+			logMessage(">>>", msg, w.buffer[:lenOff], w.buffer[lenOff:lenOff+n])
 			return lenOff + n, err
 		}
 	}
@@ -80,6 +87,7 @@ func (w *varintWriter) WriteMsg(msg proto.Message) (int, error) {
 		return 0, err
 	}
 	_, err = w.w.Write(data)
+	logMessage(">>>", msg, w.lenBuf[:n], data)
 	return len(data) + n, err
 }
 
@@ -97,4 +105,40 @@ func MarshalDelimited(msg proto.Message) ([]byte, error) {
 		return nil, err
 	}
 	return buf.Bytes(), nil
+}
+
+func logMessage(io string, msg proto.Message, varLen []byte, data []byte){
+	var name string
+	if t := reflect.TypeOf(msg); t.Kind() == reflect.Ptr {
+		name = t.Elem().Name()
+	} else {
+		name = t.Name()
+	}
+	switch name {
+	case "Packet":
+		packet := msg.(*p2p.Packet)
+		if ping := packet.GetPacketPing(); ping != nil {
+			name += ".Ping"
+		} else if pong := packet.GetPacketPong(); pong != nil {
+			name += ".Pong"
+		} else if msg := packet.GetPacketMsg(); msg != nil {
+			data := hex.EncodeToString(msg.Data)
+			if len(data) > 8 {
+				data = data[:8] + "..."
+			}
+			name += fmt.Sprintf(".Msg(%d,%v,%s)", msg.GetChannelID(), msg.GetEOF(), data)
+		} else {
+			name += fmt.Sprintf(".%d", packet.Sum.Size())
+		}
+		break
+	case "CanonicalVote":
+		canonicalVote := msg.(*types.CanonicalVote)
+		msgType := types.SignedMsgType_name[int32(canonicalVote.GetType())]
+		if strings.HasPrefix(msgType, "SIGNED_MSG_TYPE_") {
+			msgType = msgType[len("SIGNED_MSG_TYPE_"):]
+		}
+		name += fmt.Sprintf("(%s,%d,%d,%X,%s,%s)", msgType, canonicalVote.GetHeight(), canonicalVote.GetRound(), canonicalVote.GetBlockID().GetHash()[:4], canonicalVote.GetTimestamp().Format("20060102030405MST"), canonicalVote.GetChainID())
+	}
+	length := len(varLen) + len(data)
+	fmt.Printf("%s %s (%d) %X %X\n", io, name, length, varLen, data)
 }

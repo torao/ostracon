@@ -90,7 +90,13 @@ func (r *varintReader) ReadMsg(msg proto.Message) (int, error) {
 	if err != nil {
 		return n, err
 	}
-	return n, proto.Unmarshal(buf, msg)
+	err = proto.Unmarshal(buf, msg)
+	if err == nil {
+		varLen := make([]byte, binary.MaxVarintLen64)
+		binary.PutUvarint(varLen, l)
+		logMessage("<<<", msg, varLen, buf[:length])
+	}
+	return n, err
 }
 
 func (r *varintReader) Close() error {
