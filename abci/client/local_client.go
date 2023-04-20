@@ -369,3 +369,15 @@ func (app *localClient) done(reqRes *ReqRes, res *ocabci.Response) *ReqRes {
 	}
 	return reqRes
 }
+
+func (app *localClient) callback(req *ocabci.Request, res *ocabci.Response) *ReqRes {
+	app.globalCb(req, res)
+	rr := newLocalReqRes(req, res)
+	return rr
+}
+
+func newLocalReqRes(req *ocabci.Request, res *ocabci.Response) *ReqRes {
+	reqRes := NewReqRes(req, func(*ocabci.Response) {})
+	reqRes.Response = res
+	return reqRes
+}

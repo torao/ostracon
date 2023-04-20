@@ -243,7 +243,7 @@ func (s *SocketServer) handleRequest(req *types.Request, responses chan<- *types
 		res := s.app.ApplySnapshotChunk(*r.ApplySnapshotChunk)
 		responses <- types.ToResponseApplySnapshotChunk(res)
 	default:
-		responses <- types.ToResponseException("Unknown request")
+		layer2(s.app, req, responses)
 	}
 }
 

@@ -13,18 +13,6 @@ import (
 //----------------------------------------------------------------------------------------
 // Enforce which abci msgs can be sent on a connection at the type level
 
-type AppConnConsensus interface {
-	SetGlobalCallback(abcicli.GlobalCallback)
-	Error() error
-
-	InitChainSync(types.RequestInitChain) (*types.ResponseInitChain, error)
-
-	BeginBlockSync(ocabci.RequestBeginBlock) (*types.ResponseBeginBlock, error)
-	DeliverTxAsync(types.RequestDeliverTx, abcicli.ResponseCallback) *abcicli.ReqRes
-	EndBlockSync(types.RequestEndBlock) (*types.ResponseEndBlock, error)
-	CommitSync() (*types.ResponseCommit, error)
-}
-
 type AppConnMempool interface {
 	SetGlobalCallback(abcicli.GlobalCallback)
 	Error() error

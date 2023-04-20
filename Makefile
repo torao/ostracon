@@ -86,7 +86,7 @@ install: $(LIBSODIUM_TARGET)
 # go get github.com/vektra/mockery/v2/.../
 
 mock-gen:
-	go generate ./...
+	go generate ./... -tags $(BUILD_TAGS)
 .PHONY: mock
 
 ###############################################################################

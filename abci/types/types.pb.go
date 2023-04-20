@@ -11,7 +11,7 @@ import (
 	proto "github.com/gogo/protobuf/proto"
 	_ "github.com/gogo/protobuf/types"
 	types "github.com/tendermint/tendermint/abci/types"
-	_ "github.com/tendermint/tendermint/proto/tendermint/crypto"
+	crypto "github.com/tendermint/tendermint/proto/tendermint/crypto"
 	types1 "github.com/tendermint/tendermint/proto/tendermint/types"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
@@ -32,6 +32,34 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
+type Operation int32
+
+const (
+	Operation_write  Operation = 0
+	Operation_read   Operation = 1
+	Operation_delete Operation = 2
+)
+
+var Operation_name = map[int32]string{
+	0: "WRITE",
+	1: "READ",
+	2: "DELETE",
+}
+
+var Operation_value = map[string]int32{
+	"WRITE":  0,
+	"READ":   1,
+	"DELETE": 2,
+}
+
+func (x Operation) String() string {
+	return proto.EnumName(Operation_name, int32(x))
+}
+
+func (Operation) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_addf585b2317eb36, []int{0}
+}
+
 type Request struct {
 	// Types that are valid to be assigned to Value:
 	//	*Request_Echo
@@ -49,6 +77,9 @@ type Request struct {
 	//	*Request_OfferSnapshot
 	//	*Request_LoadSnapshotChunk
 	//	*Request_ApplySnapshotChunk
+	//	*Request_GetAppHash
+	//	*Request_GenerateFraudProof
+	//	*Request_VerifyFraudProof
 	//	*Request_BeginRecheckTx
 	//	*Request_EndRecheckTx
 	Value isRequest_Value `protobuf_oneof:"value"`
@@ -138,6 +169,15 @@ type Request_LoadSnapshotChunk struct {
 type Request_ApplySnapshotChunk struct {
 	ApplySnapshotChunk *types.RequestApplySnapshotChunk `protobuf:"bytes,15,opt,name=apply_snapshot_chunk,json=applySnapshotChunk,proto3,oneof" json:"apply_snapshot_chunk,omitempty"`
 }
+type Request_GetAppHash struct {
+	GetAppHash *RequestGetAppHash `protobuf:"bytes,16,opt,name=get_app_hash,json=getAppHash,proto3,oneof" json:"get_app_hash,omitempty"`
+}
+type Request_GenerateFraudProof struct {
+	GenerateFraudProof *RequestGenerateFraudProof `protobuf:"bytes,17,opt,name=generate_fraud_proof,json=generateFraudProof,proto3,oneof" json:"generate_fraud_proof,omitempty"`
+}
+type Request_VerifyFraudProof struct {
+	VerifyFraudProof *RequestVerifyFraudProof `protobuf:"bytes,18,opt,name=verify_fraud_proof,json=verifyFraudProof,proto3,oneof" json:"verify_fraud_proof,omitempty"`
+}
 type Request_BeginRecheckTx struct {
 	BeginRecheckTx *RequestBeginRecheckTx `protobuf:"bytes,1000,opt,name=begin_recheck_tx,json=beginRecheckTx,proto3,oneof" json:"begin_recheck_tx,omitempty"`
 }
@@ -160,6 +200,9 @@ func (*Request_ListSnapshots) isRequest_Value()      {}
 func (*Request_OfferSnapshot) isRequest_Value()      {}
 func (*Request_LoadSnapshotChunk) isRequest_Value()  {}
 func (*Request_ApplySnapshotChunk) isRequest_Value() {}
+func (*Request_GetAppHash) isRequest_Value()         {}
+func (*Request_GenerateFraudProof) isRequest_Value() {}
+func (*Request_VerifyFraudProof) isRequest_Value()   {}
 func (*Request_BeginRecheckTx) isRequest_Value()     {}
 func (*Request_EndRecheckTx) isRequest_Value()       {}
 
@@ -275,6 +318,27 @@ func (m *Request) GetApplySnapshotChunk() *types.RequestApplySnapshotChunk {
 	return nil
 }
 
+func (m *Request) GetGetAppHash() *RequestGetAppHash {
+	if x, ok := m.GetValue().(*Request_GetAppHash); ok {
+		return x.GetAppHash
+	}
+	return nil
+}
+
+func (m *Request) GetGenerateFraudProof() *RequestGenerateFraudProof {
+	if x, ok := m.GetValue().(*Request_GenerateFraudProof); ok {
+		return x.GenerateFraudProof
+	}
+	return nil
+}
+
+func (m *Request) GetVerifyFraudProof() *RequestVerifyFraudProof {
+	if x, ok := m.GetValue().(*Request_VerifyFraudProof); ok {
+		return x.VerifyFraudProof
+	}
+	return nil
+}
+
 func (m *Request) GetBeginRecheckTx() *RequestBeginRecheckTx {
 	if x, ok := m.GetValue().(*Request_BeginRecheckTx); ok {
 		return x.BeginRecheckTx
@@ -307,6 +371,9 @@ func (*Request) XXX_OneofWrappers() []interface{} {
 		(*Request_OfferSnapshot)(nil),
 		(*Request_LoadSnapshotChunk)(nil),
 		(*Request_ApplySnapshotChunk)(nil),
+		(*Request_GetAppHash)(nil),
+		(*Request_GenerateFraudProof)(nil),
+		(*Request_VerifyFraudProof)(nil),
 		(*Request_BeginRecheckTx)(nil),
 		(*Request_EndRecheckTx)(nil),
 	}
@@ -477,6 +544,157 @@ func (m *RequestEndRecheckTx) GetHeight() int64 {
 	return 0
 }
 
+// Gets the current appHash
+type RequestGetAppHash struct {
+}
+
+func (m *RequestGetAppHash) Reset()         { *m = RequestGetAppHash{} }
+func (m *RequestGetAppHash) String() string { return proto.CompactTextString(m) }
+func (*RequestGetAppHash) ProtoMessage()    {}
+func (*RequestGetAppHash) Descriptor() ([]byte, []int) {
+	return fileDescriptor_addf585b2317eb36, []int{4}
+}
+func (m *RequestGetAppHash) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *RequestGetAppHash) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_RequestGetAppHash.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *RequestGetAppHash) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RequestGetAppHash.Merge(m, src)
+}
+func (m *RequestGetAppHash) XXX_Size() int {
+	return m.Size()
+}
+func (m *RequestGetAppHash) XXX_DiscardUnknown() {
+	xxx_messageInfo_RequestGetAppHash.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RequestGetAppHash proto.InternalMessageInfo
+
+// Generates a fraud proof
+type RequestGenerateFraudProof struct {
+	BeginBlockRequest RequestBeginBlock         `protobuf:"bytes,1,opt,name=begin_block_request,json=beginBlockRequest,proto3" json:"begin_block_request"`
+	DeliverTxRequests []*types.RequestDeliverTx `protobuf:"bytes,2,rep,name=deliver_tx_requests,json=deliverTxRequests,proto3" json:"deliver_tx_requests,omitempty"`
+	EndBlockRequest   *types.RequestEndBlock    `protobuf:"bytes,3,opt,name=end_block_request,json=endBlockRequest,proto3" json:"end_block_request,omitempty"`
+}
+
+func (m *RequestGenerateFraudProof) Reset()         { *m = RequestGenerateFraudProof{} }
+func (m *RequestGenerateFraudProof) String() string { return proto.CompactTextString(m) }
+func (*RequestGenerateFraudProof) ProtoMessage()    {}
+func (*RequestGenerateFraudProof) Descriptor() ([]byte, []int) {
+	return fileDescriptor_addf585b2317eb36, []int{5}
+}
+func (m *RequestGenerateFraudProof) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *RequestGenerateFraudProof) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_RequestGenerateFraudProof.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *RequestGenerateFraudProof) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RequestGenerateFraudProof.Merge(m, src)
+}
+func (m *RequestGenerateFraudProof) XXX_Size() int {
+	return m.Size()
+}
+func (m *RequestGenerateFraudProof) XXX_DiscardUnknown() {
+	xxx_messageInfo_RequestGenerateFraudProof.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RequestGenerateFraudProof proto.InternalMessageInfo
+
+func (m *RequestGenerateFraudProof) GetBeginBlockRequest() RequestBeginBlock {
+	if m != nil {
+		return m.BeginBlockRequest
+	}
+	return RequestBeginBlock{}
+}
+
+func (m *RequestGenerateFraudProof) GetDeliverTxRequests() []*types.RequestDeliverTx {
+	if m != nil {
+		return m.DeliverTxRequests
+	}
+	return nil
+}
+
+func (m *RequestGenerateFraudProof) GetEndBlockRequest() *types.RequestEndBlock {
+	if m != nil {
+		return m.EndBlockRequest
+	}
+	return nil
+}
+
+// Verifies a fraud proof
+type RequestVerifyFraudProof struct {
+	FraudProof           *FraudProof `protobuf:"bytes,1,opt,name=fraud_proof,json=fraudProof,proto3" json:"fraud_proof,omitempty"`
+	ExpectedValidAppHash []byte      `protobuf:"bytes,2,opt,name=expected_valid_app_hash,json=expectedValidAppHash,proto3" json:"expected_valid_app_hash,omitempty"`
+}
+
+func (m *RequestVerifyFraudProof) Reset()         { *m = RequestVerifyFraudProof{} }
+func (m *RequestVerifyFraudProof) String() string { return proto.CompactTextString(m) }
+func (*RequestVerifyFraudProof) ProtoMessage()    {}
+func (*RequestVerifyFraudProof) Descriptor() ([]byte, []int) {
+	return fileDescriptor_addf585b2317eb36, []int{6}
+}
+func (m *RequestVerifyFraudProof) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *RequestVerifyFraudProof) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_RequestVerifyFraudProof.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *RequestVerifyFraudProof) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_RequestVerifyFraudProof.Merge(m, src)
+}
+func (m *RequestVerifyFraudProof) XXX_Size() int {
+	return m.Size()
+}
+func (m *RequestVerifyFraudProof) XXX_DiscardUnknown() {
+	xxx_messageInfo_RequestVerifyFraudProof.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_RequestVerifyFraudProof proto.InternalMessageInfo
+
+func (m *RequestVerifyFraudProof) GetFraudProof() *FraudProof {
+	if m != nil {
+		return m.FraudProof
+	}
+	return nil
+}
+
+func (m *RequestVerifyFraudProof) GetExpectedValidAppHash() []byte {
+	if m != nil {
+		return m.ExpectedValidAppHash
+	}
+	return nil
+}
+
 type Response struct {
 	// Types that are valid to be assigned to Value:
 	//	*Response_Exception
@@ -495,6 +713,9 @@ type Response struct {
 	//	*Response_OfferSnapshot
 	//	*Response_LoadSnapshotChunk
 	//	*Response_ApplySnapshotChunk
+	//	*Response_GetAppHash
+	//	*Response_GenerateFraudProof
+	//	*Response_VerifyFraudProof
 	//	*Response_BeginRecheckTx
 	//	*Response_EndRecheckTx
 	Value isResponse_Value `protobuf_oneof:"value"`
@@ -504,7 +725,7 @@ func (m *Response) Reset()         { *m = Response{} }
 func (m *Response) String() string { return proto.CompactTextString(m) }
 func (*Response) ProtoMessage()    {}
 func (*Response) Descriptor() ([]byte, []int) {
-	return fileDescriptor_addf585b2317eb36, []int{4}
+	return fileDescriptor_addf585b2317eb36, []int{7}
 }
 func (m *Response) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -587,6 +808,15 @@ type Response_LoadSnapshotChunk struct {
 type Response_ApplySnapshotChunk struct {
 	ApplySnapshotChunk *types.ResponseApplySnapshotChunk `protobuf:"bytes,16,opt,name=apply_snapshot_chunk,json=applySnapshotChunk,proto3,oneof" json:"apply_snapshot_chunk,omitempty"`
 }
+type Response_GetAppHash struct {
+	GetAppHash *ResponseGetAppHash `protobuf:"bytes,17,opt,name=get_app_hash,json=getAppHash,proto3,oneof" json:"get_app_hash,omitempty"`
+}
+type Response_GenerateFraudProof struct {
+	GenerateFraudProof *ResponseGenerateFraudProof `protobuf:"bytes,18,opt,name=generate_fraud_proof,json=generateFraudProof,proto3,oneof" json:"generate_fraud_proof,omitempty"`
+}
+type Response_VerifyFraudProof struct {
+	VerifyFraudProof *ResponseVerifyFraudProof `protobuf:"bytes,19,opt,name=verify_fraud_proof,json=verifyFraudProof,proto3,oneof" json:"verify_fraud_proof,omitempty"`
+}
 type Response_BeginRecheckTx struct {
 	BeginRecheckTx *ResponseBeginRecheckTx `protobuf:"bytes,1000,opt,name=begin_recheck_tx,json=beginRecheckTx,proto3,oneof" json:"begin_recheck_tx,omitempty"`
 }
@@ -610,6 +840,9 @@ func (*Response_ListSnapshots) isResponse_Value()      {}
 func (*Response_OfferSnapshot) isResponse_Value()      {}
 func (*Response_LoadSnapshotChunk) isResponse_Value()  {}
 func (*Response_ApplySnapshotChunk) isResponse_Value() {}
+func (*Response_GetAppHash) isResponse_Value()         {}
+func (*Response_GenerateFraudProof) isResponse_Value() {}
+func (*Response_VerifyFraudProof) isResponse_Value()   {}
 func (*Response_BeginRecheckTx) isResponse_Value()     {}
 func (*Response_EndRecheckTx) isResponse_Value()       {}
 
@@ -732,6 +965,27 @@ func (m *Response) GetApplySnapshotChunk() *types.ResponseApplySnapshotChunk {
 	return nil
 }
 
+func (m *Response) GetGetAppHash() *ResponseGetAppHash {
+	if x, ok := m.GetValue().(*Response_GetAppHash); ok {
+		return x.GetAppHash
+	}
+	return nil
+}
+
+func (m *Response) GetGenerateFraudProof() *ResponseGenerateFraudProof {
+	if x, ok := m.GetValue().(*Response_GenerateFraudProof); ok {
+		return x.GenerateFraudProof
+	}
+	return nil
+}
+
+func (m *Response) GetVerifyFraudProof() *ResponseVerifyFraudProof {
+	if x, ok := m.GetValue().(*Response_VerifyFraudProof); ok {
+		return x.VerifyFraudProof
+	}
+	return nil
+}
+
 func (m *Response) GetBeginRecheckTx() *ResponseBeginRecheckTx {
 	if x, ok := m.GetValue().(*Response_BeginRecheckTx); ok {
 		return x.BeginRecheckTx
@@ -765,6 +1019,9 @@ func (*Response) XXX_OneofWrappers() []interface{} {
 		(*Response_OfferSnapshot)(nil),
 		(*Response_LoadSnapshotChunk)(nil),
 		(*Response_ApplySnapshotChunk)(nil),
+		(*Response_GetAppHash)(nil),
+		(*Response_GenerateFraudProof)(nil),
+		(*Response_VerifyFraudProof)(nil),
 		(*Response_BeginRecheckTx)(nil),
 		(*Response_EndRecheckTx)(nil),
 	}
@@ -790,7 +1047,7 @@ func (m *ResponseCheckTx) Reset()         { *m = ResponseCheckTx{} }
 func (m *ResponseCheckTx) String() string { return proto.CompactTextString(m) }
 func (*ResponseCheckTx) ProtoMessage()    {}
 func (*ResponseCheckTx) Descriptor() ([]byte, []int) {
-	return fileDescriptor_addf585b2317eb36, []int{5}
+	return fileDescriptor_addf585b2317eb36, []int{8}
 }
 func (m *ResponseCheckTx) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -904,7 +1161,7 @@ func (m *ResponseBeginRecheckTx) Reset()         { *m = ResponseBeginRecheckTx{}
 func (m *ResponseBeginRecheckTx) String() string { return proto.CompactTextString(m) }
 func (*ResponseBeginRecheckTx) ProtoMessage()    {}
 func (*ResponseBeginRecheckTx) Descriptor() ([]byte, []int) {
-	return fileDescriptor_addf585b2317eb36, []int{6}
+	return fileDescriptor_addf585b2317eb36, []int{9}
 }
 func (m *ResponseBeginRecheckTx) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -948,7 +1205,7 @@ func (m *ResponseEndRecheckTx) Reset()         { *m = ResponseEndRecheckTx{} }
 func (m *ResponseEndRecheckTx) String() string { return proto.CompactTextString(m) }
 func (*ResponseEndRecheckTx) ProtoMessage()    {}
 func (*ResponseEndRecheckTx) Descriptor() ([]byte, []int) {
-	return fileDescriptor_addf585b2317eb36, []int{7}
+	return fileDescriptor_addf585b2317eb36, []int{10}
 }
 func (m *ResponseEndRecheckTx) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -984,113 +1241,524 @@ func (m *ResponseEndRecheckTx) GetCode() uint32 {
 	return 0
 }
 
+type ResponseGetAppHash struct {
+	AppHash []byte `protobuf:"bytes,1,opt,name=app_hash,json=appHash,proto3" json:"app_hash,omitempty"`
+}
+
+func (m *ResponseGetAppHash) Reset()         { *m = ResponseGetAppHash{} }
+func (m *ResponseGetAppHash) String() string { return proto.CompactTextString(m) }
+func (*ResponseGetAppHash) ProtoMessage()    {}
+func (*ResponseGetAppHash) Descriptor() ([]byte, []int) {
+	return fileDescriptor_addf585b2317eb36, []int{11}
+}
+func (m *ResponseGetAppHash) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ResponseGetAppHash) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ResponseGetAppHash.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ResponseGetAppHash) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ResponseGetAppHash.Merge(m, src)
+}
+func (m *ResponseGetAppHash) XXX_Size() int {
+	return m.Size()
+}
+func (m *ResponseGetAppHash) XXX_DiscardUnknown() {
+	xxx_messageInfo_ResponseGetAppHash.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ResponseGetAppHash proto.InternalMessageInfo
+
+func (m *ResponseGetAppHash) GetAppHash() []byte {
+	if m != nil {
+		return m.AppHash
+	}
+	return nil
+}
+
+type ResponseGenerateFraudProof struct {
+	FraudProof *FraudProof `protobuf:"bytes,1,opt,name=fraud_proof,json=fraudProof,proto3" json:"fraud_proof,omitempty"`
+}
+
+func (m *ResponseGenerateFraudProof) Reset()         { *m = ResponseGenerateFraudProof{} }
+func (m *ResponseGenerateFraudProof) String() string { return proto.CompactTextString(m) }
+func (*ResponseGenerateFraudProof) ProtoMessage()    {}
+func (*ResponseGenerateFraudProof) Descriptor() ([]byte, []int) {
+	return fileDescriptor_addf585b2317eb36, []int{12}
+}
+func (m *ResponseGenerateFraudProof) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ResponseGenerateFraudProof) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ResponseGenerateFraudProof.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ResponseGenerateFraudProof) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ResponseGenerateFraudProof.Merge(m, src)
+}
+func (m *ResponseGenerateFraudProof) XXX_Size() int {
+	return m.Size()
+}
+func (m *ResponseGenerateFraudProof) XXX_DiscardUnknown() {
+	xxx_messageInfo_ResponseGenerateFraudProof.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ResponseGenerateFraudProof proto.InternalMessageInfo
+
+func (m *ResponseGenerateFraudProof) GetFraudProof() *FraudProof {
+	if m != nil {
+		return m.FraudProof
+	}
+	return nil
+}
+
+type ResponseVerifyFraudProof struct {
+	Success bool `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+}
+
+func (m *ResponseVerifyFraudProof) Reset()         { *m = ResponseVerifyFraudProof{} }
+func (m *ResponseVerifyFraudProof) String() string { return proto.CompactTextString(m) }
+func (*ResponseVerifyFraudProof) ProtoMessage()    {}
+func (*ResponseVerifyFraudProof) Descriptor() ([]byte, []int) {
+	return fileDescriptor_addf585b2317eb36, []int{13}
+}
+func (m *ResponseVerifyFraudProof) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ResponseVerifyFraudProof) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ResponseVerifyFraudProof.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ResponseVerifyFraudProof) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ResponseVerifyFraudProof.Merge(m, src)
+}
+func (m *ResponseVerifyFraudProof) XXX_Size() int {
+	return m.Size()
+}
+func (m *ResponseVerifyFraudProof) XXX_DiscardUnknown() {
+	xxx_messageInfo_ResponseVerifyFraudProof.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ResponseVerifyFraudProof proto.InternalMessageInfo
+
+func (m *ResponseVerifyFraudProof) GetSuccess() bool {
+	if m != nil {
+		return m.Success
+	}
+	return false
+}
+
+// Represents a single-round fraudProof
+type FraudProof struct {
+	BlockHeight          int64                    `protobuf:"varint,1,opt,name=block_height,json=blockHeight,proto3" json:"block_height,omitempty"`
+	PreStateAppHash      []byte                   `protobuf:"bytes,2,opt,name=pre_state_app_hash,json=preStateAppHash,proto3" json:"pre_state_app_hash,omitempty"`
+	ExpectedValidAppHash []byte                   `protobuf:"bytes,3,opt,name=expected_valid_app_hash,json=expectedValidAppHash,proto3" json:"expected_valid_app_hash,omitempty"`
+	StateWitness         map[string]*StateWitness `protobuf:"bytes,4,rep,name=state_witness,json=stateWitness,proto3" json:"state_witness,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	FraudulentBeginBlock *RequestBeginBlock       `protobuf:"bytes,5,opt,name=fraudulent_begin_block,json=fraudulentBeginBlock,proto3" json:"fraudulent_begin_block,omitempty"`
+	FraudulentDeliverTx  *types.RequestDeliverTx  `protobuf:"bytes,6,opt,name=fraudulent_deliver_tx,json=fraudulentDeliverTx,proto3" json:"fraudulent_deliver_tx,omitempty"`
+	FraudulentEndBlock   *types.RequestEndBlock   `protobuf:"bytes,7,opt,name=fraudulent_end_block,json=fraudulentEndBlock,proto3" json:"fraudulent_end_block,omitempty"`
+}
+
+func (m *FraudProof) Reset()         { *m = FraudProof{} }
+func (m *FraudProof) String() string { return proto.CompactTextString(m) }
+func (*FraudProof) ProtoMessage()    {}
+func (*FraudProof) Descriptor() ([]byte, []int) {
+	return fileDescriptor_addf585b2317eb36, []int{14}
+}
+func (m *FraudProof) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *FraudProof) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_FraudProof.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *FraudProof) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_FraudProof.Merge(m, src)
+}
+func (m *FraudProof) XXX_Size() int {
+	return m.Size()
+}
+func (m *FraudProof) XXX_DiscardUnknown() {
+	xxx_messageInfo_FraudProof.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_FraudProof proto.InternalMessageInfo
+
+func (m *FraudProof) GetBlockHeight() int64 {
+	if m != nil {
+		return m.BlockHeight
+	}
+	return 0
+}
+
+func (m *FraudProof) GetPreStateAppHash() []byte {
+	if m != nil {
+		return m.PreStateAppHash
+	}
+	return nil
+}
+
+func (m *FraudProof) GetExpectedValidAppHash() []byte {
+	if m != nil {
+		return m.ExpectedValidAppHash
+	}
+	return nil
+}
+
+func (m *FraudProof) GetStateWitness() map[string]*StateWitness {
+	if m != nil {
+		return m.StateWitness
+	}
+	return nil
+}
+
+func (m *FraudProof) GetFraudulentBeginBlock() *RequestBeginBlock {
+	if m != nil {
+		return m.FraudulentBeginBlock
+	}
+	return nil
+}
+
+func (m *FraudProof) GetFraudulentDeliverTx() *types.RequestDeliverTx {
+	if m != nil {
+		return m.FraudulentDeliverTx
+	}
+	return nil
+}
+
+func (m *FraudProof) GetFraudulentEndBlock() *types.RequestEndBlock {
+	if m != nil {
+		return m.FraudulentEndBlock
+	}
+	return nil
+}
+
+// State witness with a list of all witness data
+type StateWitness struct {
+	// store level proof
+	Proof *crypto.ProofOp `protobuf:"bytes,1,opt,name=proof,proto3" json:"proof,omitempty"`
+	// substore level hash
+	RootHash []byte `protobuf:"bytes,2,opt,name=root_hash,json=rootHash,proto3" json:"root_hash,omitempty"`
+	// List of witness data
+	WitnessData []*WitnessData `protobuf:"bytes,3,rep,name=witness_data,json=witnessData,proto3" json:"witness_data,omitempty"`
+}
+
+func (m *StateWitness) Reset()         { *m = StateWitness{} }
+func (m *StateWitness) String() string { return proto.CompactTextString(m) }
+func (*StateWitness) ProtoMessage()    {}
+func (*StateWitness) Descriptor() ([]byte, []int) {
+	return fileDescriptor_addf585b2317eb36, []int{15}
+}
+func (m *StateWitness) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *StateWitness) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_StateWitness.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *StateWitness) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_StateWitness.Merge(m, src)
+}
+func (m *StateWitness) XXX_Size() int {
+	return m.Size()
+}
+func (m *StateWitness) XXX_DiscardUnknown() {
+	xxx_messageInfo_StateWitness.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_StateWitness proto.InternalMessageInfo
+
+func (m *StateWitness) GetProof() *crypto.ProofOp {
+	if m != nil {
+		return m.Proof
+	}
+	return nil
+}
+
+func (m *StateWitness) GetRootHash() []byte {
+	if m != nil {
+		return m.RootHash
+	}
+	return nil
+}
+
+func (m *StateWitness) GetWitnessData() []*WitnessData {
+	if m != nil {
+		return m.WitnessData
+	}
+	return nil
+}
+
+// Witness data containing a key/value pair and a Merkle proof for said key/value pair
+type WitnessData struct {
+	Operation Operation         `protobuf:"varint,1,opt,name=operation,proto3,enum=ostracon.abci.Operation" json:"operation,omitempty"`
+	Key       []byte            `protobuf:"bytes,2,opt,name=key,proto3" json:"key,omitempty"`
+	Value     []byte            `protobuf:"bytes,3,opt,name=value,proto3" json:"value,omitempty"`
+	Proofs    []*crypto.ProofOp `protobuf:"bytes,4,rep,name=proofs,proto3" json:"proofs,omitempty"`
+}
+
+func (m *WitnessData) Reset()         { *m = WitnessData{} }
+func (m *WitnessData) String() string { return proto.CompactTextString(m) }
+func (*WitnessData) ProtoMessage()    {}
+func (*WitnessData) Descriptor() ([]byte, []int) {
+	return fileDescriptor_addf585b2317eb36, []int{16}
+}
+func (m *WitnessData) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *WitnessData) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_WitnessData.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *WitnessData) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_WitnessData.Merge(m, src)
+}
+func (m *WitnessData) XXX_Size() int {
+	return m.Size()
+}
+func (m *WitnessData) XXX_DiscardUnknown() {
+	xxx_messageInfo_WitnessData.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_WitnessData proto.InternalMessageInfo
+
+func (m *WitnessData) GetOperation() Operation {
+	if m != nil {
+		return m.Operation
+	}
+	return Operation_write
+}
+
+func (m *WitnessData) GetKey() []byte {
+	if m != nil {
+		return m.Key
+	}
+	return nil
+}
+
+func (m *WitnessData) GetValue() []byte {
+	if m != nil {
+		return m.Value
+	}
+	return nil
+}
+
+func (m *WitnessData) GetProofs() []*crypto.ProofOp {
+	if m != nil {
+		return m.Proofs
+	}
+	return nil
+}
+
 func init() {
+	proto.RegisterEnum("ostracon.abci.Operation", Operation_name, Operation_value)
 	proto.RegisterType((*Request)(nil), "ostracon.abci.Request")
 	proto.RegisterType((*RequestBeginBlock)(nil), "ostracon.abci.RequestBeginBlock")
 	proto.RegisterType((*RequestBeginRecheckTx)(nil), "ostracon.abci.RequestBeginRecheckTx")
 	proto.RegisterType((*RequestEndRecheckTx)(nil), "ostracon.abci.RequestEndRecheckTx")
+	proto.RegisterType((*RequestGetAppHash)(nil), "ostracon.abci.RequestGetAppHash")
+	proto.RegisterType((*RequestGenerateFraudProof)(nil), "ostracon.abci.RequestGenerateFraudProof")
+	proto.RegisterType((*RequestVerifyFraudProof)(nil), "ostracon.abci.RequestVerifyFraudProof")
 	proto.RegisterType((*Response)(nil), "ostracon.abci.Response")
 	proto.RegisterType((*ResponseCheckTx)(nil), "ostracon.abci.ResponseCheckTx")
 	proto.RegisterType((*ResponseBeginRecheckTx)(nil), "ostracon.abci.ResponseBeginRecheckTx")
 	proto.RegisterType((*ResponseEndRecheckTx)(nil), "ostracon.abci.ResponseEndRecheckTx")
+	proto.RegisterType((*ResponseGetAppHash)(nil), "ostracon.abci.ResponseGetAppHash")
+	proto.RegisterType((*ResponseGenerateFraudProof)(nil), "ostracon.abci.ResponseGenerateFraudProof")
+	proto.RegisterType((*ResponseVerifyFraudProof)(nil), "ostracon.abci.ResponseVerifyFraudProof")
+	proto.RegisterType((*FraudProof)(nil), "ostracon.abci.FraudProof")
+	proto.RegisterMapType((map[string]*StateWitness)(nil), "ostracon.abci.FraudProof.StateWitnessEntry")
+	proto.RegisterType((*StateWitness)(nil), "ostracon.abci.StateWitness")
+	proto.RegisterType((*WitnessData)(nil), "ostracon.abci.WitnessData")
 }
 
 func init() { proto.RegisterFile("ostracon/abci/types.proto", fileDescriptor_addf585b2317eb36) }
 
 var fileDescriptor_addf585b2317eb36 = []byte{
-	// 1457 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x94, 0x98, 0x4b, 0x8f, 0xdb, 0x54,
-	0x14, 0xc7, 0x33, 0x4d, 0x26, 0x19, 0x9f, 0xc9, 0xa4, 0xd3, 0xd3, 0xa1, 0xb8, 0x66, 0x9a, 0x29,
-	0x29, 0x85, 0x52, 0xca, 0x44, 0x9a, 0x8a, 0xaa, 0x08, 0x24, 0x68, 0xc2, 0x8c, 0x32, 0x50, 0x11,
-	0xf5, 0x16, 0x81, 0xc4, 0xa3, 0x91, 0x63, 0xdf, 0x24, 0x66, 0x1c, 0x5f, 0xd7, 0xbe, 0x19, 0x1a,
-	0xf6, 0xec, 0xf9, 0x26, 0x2c, 0xd9, 0xb1, 0xee, 0xb2, 0x4b, 0x16, 0xa8, 0x42, 0xed, 0x06, 0xf8,
-	0x14, 0xe8, 0x5e, 0x3f, 0xea, 0x3c, 0x1c, 0x7b, 0x76, 0xf7, 0x71, 0xce, 0xdf, 0xf7, 0x5c, 0x1f,
-	0x9f, 0x5f, 0x4e, 0xe0, 0x32, 0xf3, 0xb9, 0xa7, 0x1b, 0xcc, 0x69, 0xea, 0x7d, 0xc3, 0x6a, 0xf2,
-	0xa9, 0x4b, 0xfd, 0x7d, 0xd7, 0x63, 0x9c, 0xe1, 0x56, 0xb4, 0xb5, 0x2f, 0xb6, 0xb4, 0x2b, 0x9c,
-	0x3a, 0x26, 0xf5, 0xc6, 0x96, 0xc3, 0x9b, 0x86, 0x37, 0x75, 0x39, 0x6b, 0xba, 0x1e, 0x63, 0x83,
-	0xc0, 0x7a, 0x66, 0x5b, 0xaa, 0x34, 0x5d, 0xdd, 0xd3, 0xc7, 0xa1, 0x98, 0xf6, 0x46, 0x62, 0x7b,
-	0xfe, 0x49, 0xda, 0xee, 0x82, 0x6f, 0x72, 0x57, 0x8b, 0x8f, 0xb8, 0xb8, 0xb7, 0xbb, 0x78, 0xa8,
-	0x13, 0x3a, 0x8d, 0x76, 0xf7, 0x86, 0x8c, 0x0d, 0x6d, 0xda, 0x94, 0xb3, 0xfe, 0x64, 0xd0, 0xe4,
-	0xd6, 0x98, 0xfa, 0x5c, 0x1f, 0xbb, 0xa1, 0xc1, 0xce, 0x90, 0x0d, 0x99, 0x1c, 0x36, 0xc5, 0x28,
-	0x58, 0x6d, 0xfc, 0xa6, 0x40, 0x85, 0xd0, 0xc7, 0x13, 0xea, 0x73, 0x3c, 0x80, 0x12, 0x35, 0x46,
-	0x4c, 0x5d, 0xbb, 0xba, 0x76, 0x63, 0xf3, 0x60, 0x77, 0xff, 0xd5, 0xf3, 0xe4, 0xad, 0xec, 0x87,
-	0x76, 0x87, 0xc6, 0x88, 0x75, 0x0a, 0x44, 0xda, 0xe2, 0x07, 0xb0, 0x3e, 0xb0, 0x27, 0xfe, 0x48,
-	0x3d, 0x27, 0x9d, 0xae, 0xa4, 0x39, 0x1d, 0x09, 0xa3, 0x4e, 0x81, 0x04, 0xd6, 0xe2, 0x51, 0x96,
-	0x33, 0x60, 0x6a, 0x71, 0xf5, 0xa3, 0x8e, 0x9d, 0x81, 0x7c, 0x94, 0xb0, 0xc5, 0x16, 0x80, 0x4f,
-	0x79, 0x8f, 0xb9, 0xdc, 0x62, 0x8e, 0x5a, 0x92, 0x9e, 0x6f, 0xa6, 0x79, 0x3e, 0xa4, 0xbc, 0x2b,
-	0x0d, 0x3b, 0x05, 0xa2, 0xf8, 0xd1, 0x44, 0x68, 0x58, 0x8e, 0xc5, 0x7b, 0xc6, 0x48, 0xb7, 0x1c,
-	0x75, 0x7d, 0xb5, 0xc6, 0xb1, 0x63, 0xf1, 0xb6, 0x30, 0x14, 0x1a, 0x56, 0x34, 0x11, 0x21, 0x3f,
-	0x9e, 0x50, 0x6f, 0xaa, 0x96, 0x57, 0x87, 0xfc, 0x40, 0x18, 0x89, 0x90, 0xa5, 0x35, 0xb6, 0x61,
-	0xb3, 0x4f, 0x87, 0x96, 0xd3, 0xeb, 0xdb, 0xcc, 0x38, 0x51, 0x2b, 0xd2, 0xf9, 0xea, 0xfe, 0x4c,
-	0xe2, 0x45, 0xae, 0x2d, 0x61, 0xd8, 0x12, 0x76, 0x9d, 0x02, 0x81, 0x7e, 0x3c, 0xc3, 0x8f, 0x61,
-	0xc3, 0x18, 0x51, 0xe3, 0xa4, 0xc7, 0x9f, 0xa8, 0x1b, 0x52, 0x61, 0x2f, 0xed, 0xf1, 0x6d, 0x61,
-	0xf7, 0xd5, 0x93, 0x4e, 0x81, 0x54, 0x8c, 0x60, 0x28, 0xa2, 0x37, 0xa9, 0x6d, 0x9d, 0x52, 0x4f,
-	0xf8, 0x2b, 0xab, 0xa3, 0xff, 0x2c, 0xb0, 0x94, 0x0a, 0x8a, 0x19, 0x4d, 0xf0, 0x13, 0x50, 0xa8,
-	0x63, 0x86, 0x41, 0x40, 0x18, 0x44, 0x5a, 0xa6, 0x38, 0x66, 0x14, 0xc4, 0x06, 0x0d, 0xc7, 0x78,
-	0x17, 0xca, 0x06, 0x1b, 0x8f, 0x2d, 0xae, 0x6e, 0x4a, 0xef, 0x7a, 0x6a, 0x00, 0xd2, 0xaa, 0x53,
-	0x20, 0xa1, 0x3d, 0x7e, 0x09, 0x35, 0xdb, 0xf2, 0x79, 0xcf, 0x77, 0x74, 0xd7, 0x1f, 0x31, 0xee,
-	0xab, 0x55, 0xa9, 0x70, 0x3d, 0x4d, 0xe1, 0xbe, 0xe5, 0xf3, 0x87, 0x91, 0x71, 0xa7, 0x40, 0xb6,
-	0xec, 0xe4, 0x82, 0xd0, 0x63, 0x83, 0x01, 0xf5, 0x62, 0x41, 0x75, 0x6b, 0xb5, 0x5e, 0x57, 0x58,
-	0x47, 0xfe, 0x42, 0x8f, 0x25, 0x17, 0xf0, 0x3b, 0xb8, 0x68, 0x33, 0xdd, 0x8c, 0xe5, 0x7a, 0xc6,
-	0x68, 0xe2, 0x9c, 0xa8, 0x35, 0x29, 0xfa, 0x6e, 0xea, 0x21, 0x99, 0x6e, 0x46, 0x12, 0x6d, 0xe1,
-	0xd0, 0x29, 0x90, 0x0b, 0xf6, 0xfc, 0x22, 0x3e, 0x82, 0x1d, 0xdd, 0x75, 0xed, 0xe9, 0xbc, 0xfa,
-	0x79, 0xa9, 0x7e, 0x33, 0x4d, 0xfd, 0x9e, 0xf0, 0x99, 0x97, 0x47, 0x7d, 0x61, 0x15, 0x1f, 0xc0,
-	0x76, 0x90, 0x9e, 0x1e, 0x8d, 0x33, 0xec, 0x9f, 0x20, 0x49, 0xdf, 0x5a, 0x91, 0xa4, 0x84, 0x1a,
-	0x71, 0x9e, 0xd5, 0xfa, 0x33, 0x2b, 0xf8, 0x05, 0xd4, 0x44, 0xaa, 0x24, 0x04, 0xff, 0x0d, 0x04,
-	0x1b, 0xcb, 0x05, 0x0f, 0x1d, 0x33, 0x29, 0x57, 0xa5, 0x89, 0x79, 0xab, 0x02, 0xeb, 0xa7, 0xba,
-	0x3d, 0xa1, 0x8d, 0x3f, 0xce, 0xc1, 0x85, 0x85, 0xcf, 0x04, 0x11, 0x4a, 0x23, 0xdd, 0x1f, 0xc9,
-	0xda, 0x55, 0x25, 0x72, 0x8c, 0x77, 0xa0, 0x3c, 0xa2, 0xba, 0x49, 0xbd, 0xb0, 0x38, 0xa9, 0xc9,
-	0x4b, 0x0a, 0x2a, 0x6b, 0x47, 0xee, 0xb7, 0x4a, 0x4f, 0x9f, 0xef, 0x15, 0x48, 0x68, 0x8d, 0x5d,
-	0xd8, 0xb6, 0x75, 0x9f, 0xf7, 0x82, 0xb4, 0xeb, 0x25, 0x0a, 0xd5, 0xe2, 0xc7, 0x76, 0x5f, 0x8f,
-	0x12, 0x55, 0xd4, 0xaa, 0x50, 0xa8, 0x66, 0xcf, 0xac, 0x22, 0x81, 0x9d, 0xfe, 0xf4, 0x67, 0xdd,
-	0xe1, 0x96, 0x43, 0x7b, 0xa7, 0xba, 0x6d, 0x99, 0x3a, 0x67, 0x9e, 0xaf, 0x96, 0xae, 0x16, 0x6f,
-	0x6c, 0x1e, 0x5c, 0x5e, 0x10, 0x3d, 0x3c, 0xb5, 0x4c, 0xea, 0x18, 0x34, 0x94, 0xbb, 0x18, 0x3b,
-	0x7f, 0x1d, 0xfb, 0xe2, 0x5d, 0xa8, 0x50, 0x87, 0x7b, 0xcc, 0x9d, 0x46, 0xaf, 0xe9, 0xf5, 0x57,
-	0xb7, 0x1a, 0x04, 0x77, 0x18, 0xec, 0x87, 0x2a, 0x91, 0x79, 0xa3, 0x0b, 0xaf, 0x2d, 0x7d, 0x83,
-	0x89, 0xfb, 0x5a, 0x3b, 0xcb, 0x7d, 0x35, 0xde, 0x87, 0x8b, 0x4b, 0xde, 0x20, 0x5e, 0x12, 0x72,
-	0xd6, 0x70, 0xc4, 0xa5, 0x5c, 0x91, 0x84, 0xb3, 0xc6, 0x2f, 0x00, 0x1b, 0x84, 0xfa, 0x2e, 0x73,
-	0x7c, 0x8a, 0x2d, 0x50, 0xe8, 0x13, 0x83, 0x06, 0x35, 0x7d, 0x2d, 0xcc, 0x8e, 0xc5, 0x5c, 0x0e,
-	0xac, 0x0f, 0x23, 0x4b, 0x51, 0x92, 0x62, 0x37, 0xbc, 0x1d, 0x72, 0x2b, 0x1d, 0x41, 0xa1, 0x7b,
-	0x12, 0x5c, 0x77, 0x22, 0x70, 0x15, 0x53, 0xab, 0x50, 0xe0, 0x35, 0x47, 0xae, 0xdb, 0x21, 0xb9,
-	0x4a, 0x19, 0x0f, 0x9b, 0x41, 0x57, 0x7b, 0x06, 0x5d, 0xeb, 0x19, 0x61, 0xa6, 0xb0, 0xab, 0x3d,
-	0xc3, 0xae, 0x72, 0x86, 0x48, 0x0a, 0xbc, 0xee, 0x44, 0xf0, 0xaa, 0x64, 0x84, 0x3d, 0x47, 0xaf,
-	0xa3, 0x59, 0x7a, 0x05, 0xec, 0xb9, 0x96, 0xea, 0x9d, 0x0a, 0xb0, 0x8f, 0x12, 0x00, 0x53, 0xc2,
-	0x23, 0xcc, 0x17, 0x83, 0x40, 0x62, 0x09, 0xbf, 0xda, 0x33, 0xfc, 0x82, 0x8c, 0x1b, 0x48, 0x01,
-	0xd8, 0xa7, 0x49, 0x80, 0x6d, 0xa6, 0x32, 0x30, 0x4c, 0x99, 0x65, 0x04, 0xfb, 0x30, 0x26, 0x58,
-	0x35, 0x15, 0xc1, 0x61, 0x0c, 0xf3, 0x08, 0xeb, 0x2e, 0x20, 0x2c, 0x40, 0xce, 0xdb, 0xa9, 0x12,
-	0x19, 0x0c, 0xeb, 0x2e, 0x30, 0xac, 0x96, 0x21, 0x98, 0x01, 0xb1, 0xef, 0x97, 0x43, 0x2c, 0x1d,
-	0x33, 0xe1, 0x31, 0xf3, 0x51, 0xac, 0x97, 0x42, 0xb1, 0x6d, 0x29, 0xff, 0x5e, 0xaa, 0x7c, 0x6e,
-	0x8c, 0x91, 0x74, 0x8c, 0x5d, 0x4f, 0x49, 0xb4, 0x4c, 0x8e, 0xdd, 0x4f, 0xe3, 0xd8, 0xb5, 0x14,
-	0xc5, 0x7c, 0x20, 0xfb, 0xeb, 0x1c, 0x9c, 0x9f, 0x4b, 0x76, 0x81, 0x31, 0x83, 0x99, 0x54, 0x56,
-	0xc2, 0x2d, 0x22, 0xc7, 0x62, 0xcd, 0xd4, 0xb9, 0x2e, 0xcb, 0x5b, 0x95, 0xc8, 0x31, 0x6e, 0x43,
-	0xd1, 0x66, 0x43, 0x59, 0xbb, 0x14, 0x22, 0x86, 0xc2, 0x2a, 0xae, 0x4b, 0x4a, 0x58, 0x76, 0xea,
-	0x00, 0x43, 0xdd, 0xef, 0xfd, 0xa4, 0x3b, 0x9c, 0x9a, 0xb2, 0xec, 0x14, 0x49, 0x62, 0x05, 0x35,
-	0xd8, 0x10, 0xb3, 0x89, 0x4f, 0x4d, 0x59, 0x4f, 0x8a, 0x24, 0x9e, 0x63, 0x07, 0xca, 0xf4, 0x94,
-	0x3a, 0xdc, 0x57, 0x2b, 0x92, 0x52, 0x97, 0x96, 0x50, 0x8a, 0x3a, 0xbc, 0xa5, 0x0a, 0x14, 0xfc,
-	0xf7, 0x7c, 0x6f, 0x3b, 0xb0, 0xbe, 0xc5, 0xc6, 0x16, 0xa7, 0x63, 0x97, 0x4f, 0x49, 0xe8, 0x8f,
-	0xbb, 0xa0, 0x88, 0x38, 0x7c, 0x57, 0x37, 0xa8, 0x2c, 0x1c, 0x0a, 0x79, 0xb5, 0x20, 0x28, 0xe1,
-	0x4b, 0x61, 0x59, 0x0e, 0x14, 0x12, 0xce, 0xc4, 0xd9, 0x5c, 0xcf, 0x62, 0x9e, 0xc5, 0xa7, 0xf2,
-	0x4b, 0x2f, 0x92, 0x78, 0x8e, 0xd7, 0x60, 0x6b, 0x4c, 0xc7, 0x2e, 0x63, 0x76, 0x8f, 0x7a, 0x1e,
-	0xf3, 0xe4, 0x67, 0xac, 0x90, 0x6a, 0xb8, 0x78, 0x28, 0xd6, 0x1a, 0xb7, 0xe0, 0xd2, 0xf2, 0x37,
-	0xbc, 0xec, 0x92, 0x1b, 0x37, 0x61, 0x67, 0xd9, 0xdb, 0x5b, 0x66, 0x7b, 0xf0, 0xfb, 0x26, 0x9c,
-	0xbf, 0xd7, 0x6a, 0x1f, 0x8b, 0xa4, 0xb4, 0x0c, 0x3d, 0x2c, 0xce, 0x25, 0x81, 0x17, 0x5c, 0xd9,
-	0x35, 0x69, 0xab, 0xd9, 0x84, 0x47, 0xb0, 0x2e, 0x69, 0x83, 0xab, 0xdb, 0x28, 0x2d, 0x03, 0x56,
-	0xe2, 0x30, 0xf2, 0x77, 0xc7, 0xca, 0xbe, 0x4a, 0x5b, 0xcd, 0x2e, 0x24, 0xa0, 0xc4, 0x20, 0xc2,
-	0xec, 0x3e, 0x4b, 0xcb, 0xc1, 0x33, 0xa1, 0x19, 0x57, 0x65, 0xcc, 0xee, 0x3c, 0xb4, 0x1c, 0xc5,
-	0x1d, 0x3f, 0x87, 0x4a, 0xf4, 0xf5, 0x64, 0xf5, 0x42, 0x5a, 0x06, 0x6b, 0xc4, 0x0b, 0x90, 0xdc,
-	0xc3, 0xd5, 0x4d, 0x9d, 0x96, 0x81, 0x4d, 0x3c, 0x86, 0x72, 0x50, 0xfa, 0x31, 0xa3, 0xbb, 0xd1,
-	0xb2, 0xd8, 0x21, 0xae, 0x2c, 0x46, 0x39, 0x66, 0xb7, 0xaa, 0x5a, 0x8e, 0x5f, 0x04, 0xf8, 0x10,
-	0x20, 0xf1, 0xd3, 0x39, 0xb3, 0x07, 0xd5, 0xf2, 0x70, 0x1e, 0xbb, 0xb0, 0x11, 0xd1, 0x12, 0x33,
-	0x3b, 0x42, 0x2d, 0x1b, 0xb9, 0xf8, 0x08, 0xb6, 0x66, 0xe0, 0x87, 0xf9, 0xfa, 0x3c, 0x2d, 0x27,
-	0x4b, 0x85, 0xfe, 0x0c, 0x0b, 0x31, 0x5f, 0xdf, 0xa7, 0xe5, 0x44, 0x2b, 0xfe, 0x08, 0x17, 0x16,
-	0xa8, 0x88, 0xf9, 0xdb, 0x40, 0xed, 0x0c, 0xb0, 0xc5, 0x31, 0xe0, 0x22, 0x22, 0xf1, 0x0c, 0x5d,
-	0xa1, 0x76, 0x16, 0xf6, 0xe2, 0x0f, 0x50, 0x9b, 0xab, 0xa9, 0xb9, 0x7a, 0x44, 0x2d, 0x1f, 0x82,
-	0xf1, 0x1b, 0xa8, 0xce, 0x14, 0xe1, 0x1c, 0xfd, 0xa2, 0x96, 0x87, 0xc5, 0xad, 0x7b, 0x4f, 0x5f,
-	0xd4, 0xd7, 0x9e, 0xbd, 0xa8, 0xaf, 0xfd, 0xfd, 0xa2, 0xbe, 0xf6, 0xeb, 0xcb, 0x7a, 0xe1, 0xd9,
-	0xcb, 0x7a, 0xe1, 0xcf, 0x97, 0xf5, 0xc2, 0xb7, 0xef, 0x0c, 0x2d, 0x3e, 0x9a, 0xf4, 0xf7, 0x0d,
-	0x36, 0x6e, 0x1e, 0x59, 0x8e, 0x6f, 0x8c, 0x2c, 0xbd, 0xb9, 0xe4, 0xff, 0xc2, 0x7e, 0x59, 0xfe,
-	0x6f, 0x76, 0xfb, 0xff, 0x00, 0x00, 0x00, 0xff, 0xff, 0x38, 0x72, 0x1d, 0x52, 0x4d, 0x14, 0x00,
-	0x00,
+	// 2144 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xa4, 0x59, 0xcd, 0x73, 0x1b, 0x49,
+	0x15, 0x97, 0x2c, 0x5b, 0x1f, 0x4f, 0xb2, 0x23, 0x3f, 0x7b, 0x93, 0xf1, 0x24, 0xeb, 0x78, 0x15,
+	0x96, 0x0d, 0xc9, 0x62, 0x81, 0xc3, 0xa6, 0xc2, 0x02, 0x05, 0xb1, 0x2d, 0x23, 0x83, 0xc1, 0x9b,
+	0x4e, 0x70, 0x28, 0xc8, 0xee, 0xd4, 0x78, 0xa6, 0x25, 0x0d, 0x96, 0x66, 0x66, 0x67, 0x5a, 0x4e,
+	0xc4, 0x99, 0x53, 0x8a, 0x03, 0x07, 0x8e, 0xe4, 0xc0, 0x99, 0xff, 0x81, 0x23, 0xb5, 0xc7, 0x3d,
+	0x52, 0x14, 0xb5, 0x45, 0x25, 0x17, 0xe0, 0xaf, 0xa0, 0xba, 0xa7, 0x67, 0x34, 0xfa, 0x18, 0xcd,
+	0xa4, 0xb8, 0x4d, 0xbf, 0x7e, 0xef, 0xd7, 0x9f, 0xef, 0xbd, 0xdf, 0xeb, 0x81, 0x2d, 0xc7, 0x67,
+	0x9e, 0x6e, 0x38, 0x76, 0x53, 0x3f, 0x37, 0xac, 0x26, 0x1b, 0xb9, 0xd4, 0xdf, 0x75, 0x3d, 0x87,
+	0x39, 0xb8, 0x1a, 0x76, 0xed, 0xf2, 0x2e, 0xf5, 0x5d, 0x46, 0x6d, 0x93, 0x7a, 0x03, 0xcb, 0x66,
+	0x4d, 0xc3, 0x1b, 0xb9, 0xcc, 0x69, 0xba, 0x9e, 0xe3, 0x74, 0x02, 0xed, 0x89, 0x6e, 0x81, 0xd2,
+	0x74, 0x75, 0x4f, 0x1f, 0x48, 0x30, 0xf5, 0x7a, 0xac, 0x7b, 0x7a, 0x24, 0xf5, 0xc6, 0x8c, 0x6d,
+	0xbc, 0x57, 0x8d, 0xa6, 0x38, 0xdb, 0x77, 0x63, 0x76, 0x52, 0x17, 0x74, 0x14, 0xf6, 0xde, 0xec,
+	0x3a, 0x4e, 0xb7, 0x4f, 0x9b, 0xa2, 0x75, 0x3e, 0xec, 0x34, 0x99, 0x35, 0xa0, 0x3e, 0xd3, 0x07,
+	0xae, 0x54, 0xd8, 0xec, 0x3a, 0x5d, 0x47, 0x7c, 0x36, 0xf9, 0x57, 0x20, 0x6d, 0xfc, 0xa5, 0x0a,
+	0x25, 0x42, 0x3f, 0x1f, 0x52, 0x9f, 0xe1, 0x1e, 0x2c, 0x53, 0xa3, 0xe7, 0x28, 0xf9, 0x9d, 0xfc,
+	0xed, 0xea, 0xde, 0x8d, 0xdd, 0xf1, 0x78, 0x62, 0x57, 0x76, 0xa5, 0x5e, 0xcb, 0xe8, 0x39, 0xed,
+	0x1c, 0x11, 0xba, 0xf8, 0x11, 0xac, 0x74, 0xfa, 0x43, 0xbf, 0xa7, 0x2c, 0x09, 0xa3, 0x77, 0x93,
+	0x8c, 0x8e, 0xb8, 0x52, 0x3b, 0x47, 0x02, 0x6d, 0x3e, 0x94, 0x65, 0x77, 0x1c, 0xa5, 0xb0, 0x78,
+	0xa8, 0x63, 0xbb, 0x23, 0x86, 0xe2, 0xba, 0xb8, 0x0f, 0xe0, 0x53, 0xa6, 0x39, 0x2e, 0xb3, 0x1c,
+	0x5b, 0x59, 0x16, 0x96, 0xef, 0x25, 0x59, 0x3e, 0xa6, 0xec, 0x54, 0x28, 0xb6, 0x73, 0xa4, 0xe2,
+	0x87, 0x0d, 0x8e, 0x61, 0xd9, 0x16, 0xd3, 0x8c, 0x9e, 0x6e, 0xd9, 0xca, 0xca, 0x62, 0x8c, 0x63,
+	0xdb, 0x62, 0x07, 0x5c, 0x91, 0x63, 0x58, 0x61, 0x83, 0x2f, 0xf9, 0xf3, 0x21, 0xf5, 0x46, 0x4a,
+	0x71, 0xf1, 0x92, 0x1f, 0x71, 0x25, 0xbe, 0x64, 0xa1, 0x8d, 0x07, 0x50, 0x3d, 0xa7, 0x5d, 0xcb,
+	0xd6, 0xce, 0xfb, 0x8e, 0x71, 0xa1, 0x94, 0x84, 0xf1, 0xce, 0xee, 0xc4, 0xc5, 0x0b, 0x4d, 0xf7,
+	0xb9, 0xe2, 0x3e, 0xd7, 0x6b, 0xe7, 0x08, 0x9c, 0x47, 0x2d, 0xfc, 0x3e, 0x94, 0x8d, 0x1e, 0x35,
+	0x2e, 0x34, 0xf6, 0x42, 0x29, 0x0b, 0x84, 0x9b, 0x49, 0xc3, 0x1f, 0x70, 0xbd, 0x27, 0x2f, 0xda,
+	0x39, 0x52, 0x32, 0x82, 0x4f, 0xbe, 0x7a, 0x93, 0xf6, 0xad, 0x4b, 0xea, 0x71, 0xfb, 0xca, 0xe2,
+	0xd5, 0x1f, 0x06, 0x9a, 0x02, 0xa1, 0x62, 0x86, 0x0d, 0xfc, 0x21, 0x54, 0xa8, 0x6d, 0xca, 0x45,
+	0x80, 0x5c, 0x44, 0xd2, 0x4d, 0xb1, 0xcd, 0x70, 0x11, 0x65, 0x2a, 0xbf, 0xf1, 0x01, 0x14, 0x0d,
+	0x67, 0x30, 0xb0, 0x98, 0x52, 0x15, 0xd6, 0xdb, 0x89, 0x0b, 0x10, 0x5a, 0xed, 0x1c, 0x91, 0xfa,
+	0xf8, 0x73, 0x58, 0xeb, 0x5b, 0x3e, 0xd3, 0x7c, 0x5b, 0x77, 0xfd, 0x9e, 0xc3, 0x7c, 0xa5, 0x26,
+	0x10, 0xde, 0x4f, 0x42, 0x38, 0xb1, 0x7c, 0xf6, 0x38, 0x54, 0x6e, 0xe7, 0xc8, 0x6a, 0x3f, 0x2e,
+	0xe0, 0x78, 0x4e, 0xa7, 0x43, 0xbd, 0x08, 0x50, 0x59, 0x5d, 0x8c, 0x77, 0xca, 0xb5, 0x43, 0x7b,
+	0x8e, 0xe7, 0xc4, 0x05, 0xf8, 0x6b, 0xd8, 0xe8, 0x3b, 0xba, 0x19, 0xc1, 0x69, 0x46, 0x6f, 0x68,
+	0x5f, 0x28, 0x6b, 0x02, 0xf4, 0x1b, 0x89, 0x93, 0x74, 0x74, 0x33, 0x84, 0x38, 0xe0, 0x06, 0xed,
+	0x1c, 0x59, 0xef, 0x4f, 0x0b, 0xf1, 0x33, 0xd8, 0xd4, 0x5d, 0xb7, 0x3f, 0x9a, 0x46, 0xbf, 0x22,
+	0xd0, 0xef, 0x24, 0xa1, 0x3f, 0xe4, 0x36, 0xd3, 0xf0, 0xa8, 0xcf, 0x48, 0xf1, 0x10, 0x6a, 0x5d,
+	0xca, 0x34, 0xdd, 0x75, 0xb5, 0x9e, 0xee, 0xf7, 0x94, 0xfa, 0xa2, 0xfb, 0xf9, 0x63, 0xca, 0x81,
+	0xdb, 0xba, 0x70, 0x69, 0xe8, 0x46, 0x2d, 0x7c, 0x06, 0x9b, 0x5d, 0x6a, 0x53, 0x4f, 0x67, 0x54,
+	0xeb, 0x78, 0xfa, 0xd0, 0xd4, 0x44, 0xdc, 0x54, 0xd6, 0x05, 0xda, 0xed, 0x24, 0xb4, 0xc0, 0xe2,
+	0x88, 0x1b, 0x7c, 0xc2, 0xf5, 0xf9, 0x1c, 0xbb, 0x33, 0x52, 0x3c, 0x03, 0xbc, 0xa4, 0x9e, 0xd5,
+	0x19, 0x4d, 0x60, 0xa3, 0xc0, 0xfe, 0xfa, 0x7c, 0xec, 0x33, 0xa1, 0x3f, 0x81, 0x5c, 0xbf, 0x9c,
+	0x92, 0xe1, 0x23, 0xa8, 0x07, 0xae, 0xe9, 0xd1, 0xc8, 0xbb, 0xfe, 0x1d, 0x38, 0xe8, 0xd7, 0x16,
+	0x38, 0x28, 0xa1, 0x46, 0xe4, 0x63, 0x6b, 0xe7, 0x13, 0x12, 0xfc, 0x29, 0xac, 0x71, 0x37, 0x89,
+	0x01, 0xfe, 0x27, 0x00, 0x6c, 0xcc, 0x07, 0x6c, 0xd9, 0x66, 0x1c, 0xae, 0x46, 0x63, 0xed, 0xfd,
+	0x12, 0xac, 0x5c, 0xea, 0xfd, 0x21, 0x6d, 0xfc, 0x75, 0x09, 0xd6, 0x67, 0x42, 0x04, 0x22, 0x2c,
+	0x8b, 0x23, 0xe3, 0x71, 0xbb, 0x46, 0xc4, 0x37, 0xde, 0x87, 0x62, 0x8f, 0xea, 0x26, 0xf5, 0x64,
+	0x60, 0x56, 0xe2, 0x17, 0x24, 0xc8, 0x2a, 0x6d, 0xd1, 0xbf, 0xbf, 0xfc, 0xc5, 0x57, 0x37, 0x73,
+	0x44, 0x6a, 0xe3, 0x29, 0xd4, 0xfb, 0xba, 0xcf, 0xb4, 0xc0, 0xe5, 0xb4, 0x58, 0x90, 0x9e, 0x0d,
+	0x34, 0x27, 0x7a, 0xe8, 0xa4, 0x3c, 0x4e, 0x4b, 0xa0, 0xb5, 0xfe, 0x84, 0x14, 0x09, 0x6c, 0x9e,
+	0x8f, 0x7e, 0xab, 0xdb, 0xcc, 0xb2, 0xa9, 0x76, 0xa9, 0xf7, 0x2d, 0x53, 0x67, 0x8e, 0xe7, 0x2b,
+	0xcb, 0x3b, 0x85, 0xdb, 0xd5, 0xbd, 0xad, 0x19, 0xd0, 0xd6, 0xa5, 0x65, 0x52, 0xdb, 0xa0, 0x12,
+	0x6e, 0x23, 0x32, 0x3e, 0x8b, 0x6c, 0xf1, 0x01, 0x94, 0xa8, 0xcd, 0x3c, 0xc7, 0x1d, 0x85, 0xc7,
+	0x74, 0x6d, 0xbc, 0xab, 0xc1, 0xe2, 0x5a, 0x41, 0xbf, 0x44, 0x09, 0xd5, 0x1b, 0xa7, 0xf0, 0xce,
+	0xdc, 0x13, 0x8c, 0xed, 0x57, 0xfe, 0x6d, 0xf6, 0xab, 0xf1, 0x4d, 0xd8, 0x98, 0x73, 0x82, 0x78,
+	0x95, 0xc3, 0x59, 0xdd, 0x1e, 0x13, 0x70, 0x05, 0x22, 0x5b, 0x8d, 0x8d, 0xe8, 0xfc, 0xc6, 0x2e,
+	0xd4, 0xf8, 0xe3, 0x12, 0x6c, 0x25, 0xba, 0x02, 0x9e, 0xc1, 0x46, 0x2c, 0x6f, 0x68, 0x5e, 0xa0,
+	0x28, 0xa7, 0x99, 0x9a, 0x3f, 0xe4, 0x74, 0xd7, 0xc7, 0x39, 0x24, 0xcc, 0xf6, 0x8f, 0x60, 0x63,
+	0x9c, 0x0c, 0x42, 0x58, 0x5f, 0x59, 0x12, 0xe7, 0x92, 0x9e, 0x15, 0xc8, 0x7a, 0x94, 0x13, 0x64,
+	0x97, 0x8f, 0x27, 0xb0, 0x1e, 0xe5, 0x86, 0x68, 0xa2, 0x85, 0x6c, 0x39, 0x82, 0x5c, 0x09, 0x33,
+	0x84, 0xec, 0x68, 0xfc, 0x3e, 0x0f, 0xd7, 0x12, 0xbc, 0x18, 0x3f, 0x86, 0x6a, 0x3c, 0x04, 0x04,
+	0x9b, 0xb1, 0x35, 0xb5, 0x19, 0x63, 0x7d, 0x02, 0x9d, 0xb1, 0xed, 0x47, 0x70, 0x8d, 0xbe, 0x70,
+	0xa9, 0xc1, 0xa8, 0x19, 0x5c, 0xc8, 0x71, 0xd0, 0x5b, 0x12, 0x1e, 0xb4, 0x19, 0x76, 0x8b, 0x2b,
+	0x17, 0x9e, 0xd2, 0xef, 0x6a, 0x50, 0x26, 0xd4, 0x77, 0x1d, 0xdb, 0xa7, 0xb8, 0x0f, 0x15, 0xfa,
+	0xc2, 0xa0, 0x01, 0x15, 0xc9, 0x4b, 0xc7, 0x9e, 0x5d, 0x61, 0xa0, 0xdd, 0x0a, 0x35, 0x79, 0x26,
+	0x8d, 0xcc, 0xf0, 0x9e, 0xa4, 0x5b, 0xc9, 0xcc, 0x49, 0x9a, 0xc7, 0xf9, 0xd6, 0xfd, 0x90, 0x6f,
+	0x15, 0x12, 0x93, 0x67, 0x60, 0x35, 0x45, 0xb8, 0xee, 0x49, 0xc2, 0xb5, 0x9c, 0x32, 0xd8, 0x04,
+	0xe3, 0x3a, 0x98, 0x60, 0x5c, 0x2b, 0x29, 0xcb, 0x4c, 0xa0, 0x5c, 0x07, 0x13, 0x94, 0xab, 0x98,
+	0x02, 0x92, 0xc0, 0xb9, 0xee, 0x87, 0x9c, 0xab, 0x94, 0xb2, 0xec, 0x29, 0xd2, 0x75, 0x34, 0x49,
+	0xba, 0x02, 0xca, 0x74, 0x2b, 0xd1, 0x3a, 0x91, 0x77, 0x7d, 0x2f, 0xc6, 0xbb, 0x2a, 0x72, 0x0a,
+	0xd3, 0x9e, 0x17, 0x40, 0xcc, 0xa1, 0x5d, 0x07, 0x13, 0xb4, 0x0b, 0x52, 0x76, 0x20, 0x81, 0x77,
+	0xfd, 0x28, 0xce, 0xbb, 0xaa, 0x89, 0xd4, 0x4d, 0x5e, 0x99, 0x79, 0xc4, 0xeb, 0xbb, 0x11, 0xf1,
+	0xaa, 0x25, 0x32, 0x47, 0xb9, 0x86, 0x69, 0xe6, 0x75, 0x3a, 0xc3, 0xbc, 0x56, 0x65, 0xd2, 0x4d,
+	0x82, 0x48, 0xa1, 0x5e, 0xa7, 0x33, 0xd4, 0x6b, 0x2d, 0x05, 0x30, 0x85, 0x7b, 0x3d, 0x9b, 0xcf,
+	0xbd, 0x92, 0xd9, 0x91, 0x9c, 0x66, 0x36, 0xf2, 0xa5, 0x25, 0x90, 0xaf, 0x80, 0x24, 0xdd, 0x4d,
+	0x84, 0xcf, 0xcc, 0xbe, 0x5a, 0x53, 0xec, 0x6b, 0x5d, 0x1e, 0xf0, 0xfc, 0x3b, 0x96, 0x48, 0xbf,
+	0x3e, 0x4d, 0xa0, 0x5f, 0x28, 0x29, 0x68, 0x12, 0x5c, 0x46, 0xfe, 0xf5, 0x74, 0x2e, 0xff, 0xda,
+	0x10, 0xe0, 0x1f, 0x24, 0x80, 0x67, 0x22, 0x60, 0x24, 0x99, 0x80, 0xbd, 0x9f, 0x80, 0x9b, 0xca,
+	0xc0, 0x4e, 0x92, 0x18, 0xd8, 0xad, 0x04, 0xc4, 0x6c, 0x14, 0xec, 0x9f, 0x4b, 0x70, 0x65, 0xca,
+	0xd7, 0x39, 0x01, 0x33, 0x1c, 0x93, 0x8a, 0x44, 0xb0, 0x4a, 0xc4, 0x37, 0x97, 0x99, 0x3a, 0xd3,
+	0x65, 0x4a, 0x11, 0xdf, 0x58, 0x87, 0x42, 0xdf, 0xe9, 0x8a, 0xd0, 0x5d, 0x21, 0xfc, 0x93, 0x6b,
+	0x45, 0x61, 0xb9, 0x22, 0xa3, 0xee, 0x36, 0x40, 0x57, 0xf7, 0xb5, 0xe7, 0xba, 0xcd, 0xa8, 0x29,
+	0xa2, 0x6e, 0x81, 0xc4, 0x24, 0xa8, 0x42, 0x99, 0xb7, 0x86, 0x3e, 0x35, 0x45, 0x38, 0x2d, 0x90,
+	0xa8, 0x8d, 0x6d, 0x28, 0xd2, 0x4b, 0x6a, 0x33, 0x5f, 0x29, 0x89, 0x3c, 0x7e, 0x75, 0x0e, 0xbf,
+	0xa2, 0x36, 0xdb, 0x57, 0x38, 0x2b, 0xf8, 0xef, 0x57, 0x37, 0xeb, 0x81, 0xf6, 0x87, 0xce, 0xc0,
+	0x62, 0x74, 0xe0, 0xb2, 0x11, 0x91, 0xf6, 0x78, 0x03, 0x2a, 0x7c, 0x1d, 0xbe, 0xab, 0x1b, 0x54,
+	0xc4, 0xcd, 0x0a, 0x19, 0x0b, 0x38, 0xbf, 0xf1, 0x05, 0xb0, 0x88, 0x86, 0x15, 0x22, 0x5b, 0x7c,
+	0x6e, 0xae, 0x67, 0x39, 0x9e, 0xc5, 0x46, 0x22, 0xd0, 0x15, 0x48, 0xd4, 0xc6, 0x5b, 0xb0, 0x3a,
+	0xa0, 0x03, 0xd7, 0x71, 0xfa, 0x1a, 0xf5, 0x3c, 0xc7, 0x13, 0x51, 0xac, 0x42, 0x6a, 0x52, 0xd8,
+	0xe2, 0xb2, 0xc6, 0x87, 0x70, 0x75, 0xfe, 0x09, 0xcf, 0xdb, 0xe4, 0xc6, 0x1d, 0xd8, 0x9c, 0x77,
+	0x7a, 0x73, 0x75, 0x9b, 0x80, 0xb3, 0xfe, 0x83, 0x5b, 0x50, 0x8e, 0x9c, 0x2e, 0xe0, 0xcf, 0x25,
+	0x5d, 0x26, 0xfc, 0x5f, 0x82, 0x9a, 0xec, 0x21, 0xff, 0x0f, 0x03, 0x69, 0x7c, 0x07, 0x94, 0x24,
+	0xf7, 0x40, 0x05, 0x4a, 0xfe, 0xd0, 0x30, 0xa8, 0xef, 0x0b, 0xcc, 0x32, 0x09, 0x9b, 0x8d, 0xbf,
+	0x2d, 0x03, 0xc4, 0x14, 0xdf, 0x83, 0x5a, 0x40, 0xb4, 0x26, 0x88, 0x66, 0x55, 0xc8, 0xda, 0x42,
+	0x84, 0x77, 0x01, 0x5d, 0x8f, 0x6a, 0x3e, 0xe3, 0xf1, 0x60, 0x8a, 0xe4, 0x5c, 0x71, 0x3d, 0xfa,
+	0x98, 0x77, 0x84, 0x3b, 0xb1, 0x80, 0x16, 0x15, 0x92, 0x69, 0x11, 0x7e, 0x02, 0xab, 0x01, 0xfe,
+	0x73, 0x8b, 0xd9, 0x7c, 0xd6, 0x01, 0xb1, 0xbf, 0x9b, 0xb8, 0x13, 0xbb, 0x62, 0xd4, 0xa7, 0x81,
+	0x36, 0xa7, 0xe9, 0x23, 0x52, 0xf3, 0x63, 0x22, 0x3c, 0x83, 0xab, 0x62, 0xaf, 0x86, 0x7d, 0x6a,
+	0x33, 0x2d, 0x9e, 0xbe, 0x57, 0xb2, 0x71, 0x5e, 0xb2, 0x39, 0xb6, 0x8f, 0x95, 0x49, 0xbf, 0x80,
+	0x77, 0x62, 0xb8, 0xb1, 0x8c, 0x5c, 0xcc, 0xf8, 0x10, 0x42, 0x36, 0xc6, 0xf6, 0x91, 0x90, 0x17,
+	0x38, 0x31, 0xd8, 0x71, 0x8e, 0x2e, 0x65, 0xe4, 0xbd, 0x38, 0xb6, 0x0e, 0x65, 0xea, 0x33, 0x58,
+	0x9f, 0xd9, 0x25, 0x1e, 0x3d, 0x2e, 0xe8, 0x48, 0x9c, 0x73, 0x85, 0xf0, 0x4f, 0xfc, 0xb6, 0x0c,
+	0x4a, 0x92, 0x42, 0x5e, 0x9f, 0xda, 0x98, 0x38, 0x04, 0x09, 0x34, 0x3f, 0x5e, 0x7a, 0x90, 0x6f,
+	0xfc, 0x29, 0x0f, 0xb5, 0x78, 0x1f, 0x7e, 0x0b, 0x56, 0xe2, 0xb7, 0x58, 0x8d, 0xcf, 0x39, 0x78,
+	0x69, 0xdc, 0x15, 0x47, 0x77, 0xea, 0x92, 0x40, 0x11, 0xaf, 0x43, 0xc5, 0x73, 0x1c, 0x16, 0xbf,
+	0x50, 0x65, 0x2e, 0x10, 0x57, 0xe2, 0x07, 0x50, 0x93, 0x97, 0x41, 0x13, 0x21, 0xb0, 0x20, 0x6e,
+	0x84, 0x3a, 0x35, 0x3b, 0x39, 0xf8, 0xa1, 0xce, 0x74, 0x52, 0x7d, 0x3e, 0x6e, 0x34, 0xfe, 0x9c,
+	0x87, 0x6a, 0xac, 0x13, 0xef, 0x43, 0xc5, 0x71, 0xb9, 0xfb, 0x85, 0x5c, 0x7b, 0x6d, 0x4f, 0x99,
+	0xc2, 0x3a, 0x0d, 0xfb, 0xc9, 0x58, 0x35, 0xdc, 0xaf, 0x60, 0x76, 0x62, 0xbf, 0x36, 0xc3, 0xfd,
+	0x0a, 0x2e, 0x74, 0xd0, 0xc0, 0x3d, 0x28, 0x8a, 0x45, 0x85, 0x57, 0x77, 0xd1, 0xf2, 0xa5, 0xe6,
+	0x9d, 0x9f, 0x41, 0x25, 0x1a, 0x93, 0xc3, 0x3e, 0x25, 0xc7, 0x4f, 0x5a, 0xf5, 0x9c, 0x5a, 0x79,
+	0xf9, 0x6a, 0x67, 0xe5, 0xb9, 0x67, 0x31, 0x91, 0x00, 0x48, 0xeb, 0xe1, 0x61, 0x3d, 0xaf, 0x96,
+	0x5f, 0xbe, 0xda, 0x59, 0xf6, 0xa8, 0x6e, 0xf2, 0xb0, 0x79, 0xd8, 0x3a, 0x69, 0x3d, 0x69, 0xd5,
+	0x97, 0x54, 0x78, 0xf9, 0x6a, 0xa7, 0x68, 0xd2, 0x3e, 0x65, 0x74, 0xef, 0x1f, 0xab, 0x70, 0xe5,
+	0xe1, 0xfe, 0xc1, 0x31, 0xe7, 0x0b, 0x96, 0xa1, 0x4b, 0xde, 0xbc, 0xcc, 0x99, 0x3f, 0x2e, 0x7c,
+	0x87, 0x55, 0x17, 0x97, 0x0d, 0x78, 0x04, 0x2b, 0xa2, 0x10, 0xc0, 0xc5, 0x0f, 0xb3, 0x6a, 0x4a,
+	0x1d, 0xc1, 0x27, 0x23, 0xaa, 0xf9, 0x85, 0x2f, 0xb5, 0xea, 0xe2, 0xb2, 0x02, 0x09, 0x54, 0xa2,
+	0x1a, 0x01, 0xd3, 0x5f, 0x6e, 0xd5, 0x0c, 0xa5, 0x06, 0xc7, 0x1c, 0xbb, 0x62, 0xba, 0x0b, 0xab,
+	0x19, 0x78, 0x37, 0xfe, 0x04, 0x4a, 0x61, 0x66, 0x4f, 0x7b, 0x5d, 0x55, 0x53, 0xca, 0x00, 0x7e,
+	0x00, 0xa2, 0x24, 0xc1, 0xc5, 0xcf, 0xc4, 0x6a, 0x4a, 0x45, 0x83, 0xc7, 0x50, 0x0c, 0x58, 0x39,
+	0xa6, 0xbc, 0x97, 0xaa, 0x69, 0xb4, 0x9e, 0x6f, 0x59, 0x54, 0x65, 0x61, 0xfa, 0xe3, 0xb7, 0x9a,
+	0xa1, 0x58, 0xc3, 0xc7, 0x00, 0xb1, 0x48, 0x9b, 0x1a, 0xa1, 0xd5, 0x2c, 0x25, 0x18, 0x9e, 0x42,
+	0x39, 0x8c, 0x88, 0x98, 0x1a, 0x47, 0xd5, 0xf4, 0x6a, 0x08, 0x3f, 0x83, 0xd5, 0x89, 0xba, 0x04,
+	0xb3, 0xbd, 0x1c, 0xab, 0x19, 0xcb, 0x1c, 0x8e, 0x3f, 0x51, 0xa6, 0x60, 0xb6, 0x97, 0x64, 0x35,
+	0x63, 0xd5, 0x83, 0xbf, 0x81, 0xf5, 0x99, 0x82, 0x05, 0xb3, 0x3f, 0x2c, 0xab, 0x6f, 0x51, 0x07,
+	0xe1, 0x00, 0x70, 0xb6, 0x7a, 0xc1, 0xb7, 0x78, 0x67, 0x56, 0xdf, 0xa6, 0x2c, 0xc2, 0x4f, 0x61,
+	0x6d, 0x8a, 0xef, 0x65, 0x7a, 0x79, 0x55, 0xb3, 0x95, 0x07, 0xf8, 0x14, 0x6a, 0x13, 0x04, 0x31,
+	0xc3, 0x2b, 0xac, 0x9a, 0xa5, 0x4e, 0xc0, 0x47, 0x00, 0x31, 0x36, 0x99, 0xfa, 0x5c, 0xae, 0xa6,
+	0x97, 0x74, 0x68, 0x01, 0xce, 0xe1, 0x9b, 0x99, 0xdf, 0xce, 0xd5, 0xec, 0x65, 0x1e, 0x1a, 0x50,
+	0x9f, 0x21, 0xa0, 0x19, 0x1f, 0xd2, 0xd5, 0xac, 0x05, 0xdf, 0xfe, 0xc3, 0x2f, 0x5e, 0x6f, 0xe7,
+	0xbf, 0x7c, 0xbd, 0x9d, 0xff, 0xd7, 0xeb, 0xed, 0xfc, 0x1f, 0xde, 0x6c, 0xe7, 0xbe, 0x7c, 0xb3,
+	0x9d, 0xfb, 0xfb, 0x9b, 0xed, 0xdc, 0xaf, 0x3e, 0xe8, 0x5a, 0xac, 0x37, 0x3c, 0xdf, 0x35, 0x9c,
+	0x41, 0xf3, 0xc8, 0xb2, 0x7d, 0xa3, 0x67, 0xe9, 0xcd, 0x39, 0x3f, 0x69, 0xcf, 0x8b, 0xe2, 0x67,
+	0xe5, 0xbd, 0xff, 0x05, 0x00, 0x00, 0xff, 0xff, 0x97, 0x06, 0x92, 0x23, 0xc2, 0x1d, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -1122,6 +1790,9 @@ type ABCIApplicationClient interface {
 	ApplySnapshotChunk(ctx context.Context, in *types.RequestApplySnapshotChunk, opts ...grpc.CallOption) (*types.ResponseApplySnapshotChunk, error)
 	BeginRecheckTx(ctx context.Context, in *RequestBeginRecheckTx, opts ...grpc.CallOption) (*ResponseBeginRecheckTx, error)
 	EndRecheckTx(ctx context.Context, in *RequestEndRecheckTx, opts ...grpc.CallOption) (*ResponseEndRecheckTx, error)
+	GetAppHash(ctx context.Context, in *RequestGetAppHash, opts ...grpc.CallOption) (*ResponseGetAppHash, error)
+	GenerateFraudProof(ctx context.Context, in *RequestGenerateFraudProof, opts ...grpc.CallOption) (*ResponseGenerateFraudProof, error)
+	VerifyFraudProof(ctx context.Context, in *RequestVerifyFraudProof, opts ...grpc.CallOption) (*ResponseVerifyFraudProof, error)
 }
 
 type aBCIApplicationClient struct {
@@ -1285,6 +1956,33 @@ func (c *aBCIApplicationClient) EndRecheckTx(ctx context.Context, in *RequestEnd
 	return out, nil
 }
 
+func (c *aBCIApplicationClient) GetAppHash(ctx context.Context, in *RequestGetAppHash, opts ...grpc.CallOption) (*ResponseGetAppHash, error) {
+	out := new(ResponseGetAppHash)
+	err := c.cc.Invoke(ctx, "/ostracon.abci.ABCIApplication/GetAppHash", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *aBCIApplicationClient) GenerateFraudProof(ctx context.Context, in *RequestGenerateFraudProof, opts ...grpc.CallOption) (*ResponseGenerateFraudProof, error) {
+	out := new(ResponseGenerateFraudProof)
+	err := c.cc.Invoke(ctx, "/ostracon.abci.ABCIApplication/GenerateFraudProof", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *aBCIApplicationClient) VerifyFraudProof(ctx context.Context, in *RequestVerifyFraudProof, opts ...grpc.CallOption) (*ResponseVerifyFraudProof, error) {
+	out := new(ResponseVerifyFraudProof)
+	err := c.cc.Invoke(ctx, "/ostracon.abci.ABCIApplication/VerifyFraudProof", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ABCIApplicationServer is the server API for ABCIApplication service.
 type ABCIApplicationServer interface {
 	Echo(context.Context, *types.RequestEcho) (*types.ResponseEcho, error)
@@ -1304,6 +2002,9 @@ type ABCIApplicationServer interface {
 	ApplySnapshotChunk(context.Context, *types.RequestApplySnapshotChunk) (*types.ResponseApplySnapshotChunk, error)
 	BeginRecheckTx(context.Context, *RequestBeginRecheckTx) (*ResponseBeginRecheckTx, error)
 	EndRecheckTx(context.Context, *RequestEndRecheckTx) (*ResponseEndRecheckTx, error)
+	GetAppHash(context.Context, *RequestGetAppHash) (*ResponseGetAppHash, error)
+	GenerateFraudProof(context.Context, *RequestGenerateFraudProof) (*ResponseGenerateFraudProof, error)
+	VerifyFraudProof(context.Context, *RequestVerifyFraudProof) (*ResponseVerifyFraudProof, error)
 }
 
 // UnimplementedABCIApplicationServer can be embedded to have forward compatible implementations.
@@ -1360,6 +2061,15 @@ func (*UnimplementedABCIApplicationServer) BeginRecheckTx(ctx context.Context, r
 }
 func (*UnimplementedABCIApplicationServer) EndRecheckTx(ctx context.Context, req *RequestEndRecheckTx) (*ResponseEndRecheckTx, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method EndRecheckTx not implemented")
+}
+func (*UnimplementedABCIApplicationServer) GetAppHash(ctx context.Context, req *RequestGetAppHash) (*ResponseGetAppHash, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetAppHash not implemented")
+}
+func (*UnimplementedABCIApplicationServer) GenerateFraudProof(ctx context.Context, req *RequestGenerateFraudProof) (*ResponseGenerateFraudProof, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GenerateFraudProof not implemented")
+}
+func (*UnimplementedABCIApplicationServer) VerifyFraudProof(ctx context.Context, req *RequestVerifyFraudProof) (*ResponseVerifyFraudProof, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method VerifyFraudProof not implemented")
 }
 
 func RegisterABCIApplicationServer(s *grpc.Server, srv ABCIApplicationServer) {
@@ -1672,6 +2382,60 @@ func _ABCIApplication_EndRecheckTx_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ABCIApplication_GetAppHash_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RequestGetAppHash)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ABCIApplicationServer).GetAppHash(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/ostracon.abci.ABCIApplication/GetAppHash",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ABCIApplicationServer).GetAppHash(ctx, req.(*RequestGetAppHash))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ABCIApplication_GenerateFraudProof_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RequestGenerateFraudProof)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ABCIApplicationServer).GenerateFraudProof(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/ostracon.abci.ABCIApplication/GenerateFraudProof",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ABCIApplicationServer).GenerateFraudProof(ctx, req.(*RequestGenerateFraudProof))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ABCIApplication_VerifyFraudProof_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RequestVerifyFraudProof)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ABCIApplicationServer).VerifyFraudProof(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/ostracon.abci.ABCIApplication/VerifyFraudProof",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ABCIApplicationServer).VerifyFraudProof(ctx, req.(*RequestVerifyFraudProof))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _ABCIApplication_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "ostracon.abci.ABCIApplication",
 	HandlerType: (*ABCIApplicationServer)(nil),
@@ -1743,6 +2507,18 @@ var _ABCIApplication_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "EndRecheckTx",
 			Handler:    _ABCIApplication_EndRecheckTx_Handler,
+		},
+		{
+			MethodName: "GetAppHash",
+			Handler:    _ABCIApplication_GetAppHash_Handler,
+		},
+		{
+			MethodName: "GenerateFraudProof",
+			Handler:    _ABCIApplication_GenerateFraudProof_Handler,
+		},
+		{
+			MethodName: "VerifyFraudProof",
+			Handler:    _ABCIApplication_VerifyFraudProof_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -2096,6 +2872,75 @@ func (m *Request_ApplySnapshotChunk) MarshalToSizedBuffer(dAtA []byte) (int, err
 	}
 	return len(dAtA) - i, nil
 }
+func (m *Request_GetAppHash) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *Request_GetAppHash) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.GetAppHash != nil {
+		{
+			size, err := m.GetAppHash.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintTypes(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0x82
+	}
+	return len(dAtA) - i, nil
+}
+func (m *Request_GenerateFraudProof) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *Request_GenerateFraudProof) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.GenerateFraudProof != nil {
+		{
+			size, err := m.GenerateFraudProof.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintTypes(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0x8a
+	}
+	return len(dAtA) - i, nil
+}
+func (m *Request_VerifyFraudProof) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *Request_VerifyFraudProof) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.VerifyFraudProof != nil {
+		{
+			size, err := m.VerifyFraudProof.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintTypes(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0x92
+	}
+	return len(dAtA) - i, nil
+}
 func (m *Request_BeginRecheckTx) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
@@ -2275,6 +3120,130 @@ func (m *RequestEndRecheckTx) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i = encodeVarintTypes(dAtA, i, uint64(m.Height))
 		i--
 		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *RequestGetAppHash) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *RequestGetAppHash) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *RequestGetAppHash) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	return len(dAtA) - i, nil
+}
+
+func (m *RequestGenerateFraudProof) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *RequestGenerateFraudProof) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *RequestGenerateFraudProof) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.EndBlockRequest != nil {
+		{
+			size, err := m.EndBlockRequest.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintTypes(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.DeliverTxRequests) > 0 {
+		for iNdEx := len(m.DeliverTxRequests) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.DeliverTxRequests[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintTypes(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x12
+		}
+	}
+	{
+		size, err := m.BeginBlockRequest.MarshalToSizedBuffer(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = encodeVarintTypes(dAtA, i, uint64(size))
+	}
+	i--
+	dAtA[i] = 0xa
+	return len(dAtA) - i, nil
+}
+
+func (m *RequestVerifyFraudProof) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *RequestVerifyFraudProof) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *RequestVerifyFraudProof) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.ExpectedValidAppHash) > 0 {
+		i -= len(m.ExpectedValidAppHash)
+		copy(dAtA[i:], m.ExpectedValidAppHash)
+		i = encodeVarintTypes(dAtA, i, uint64(len(m.ExpectedValidAppHash)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.FraudProof != nil {
+		{
+			size, err := m.FraudProof.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintTypes(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
 	}
 	return len(dAtA) - i, nil
 }
@@ -2649,6 +3618,75 @@ func (m *Response_ApplySnapshotChunk) MarshalToSizedBuffer(dAtA []byte) (int, er
 	}
 	return len(dAtA) - i, nil
 }
+func (m *Response_GetAppHash) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *Response_GetAppHash) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.GetAppHash != nil {
+		{
+			size, err := m.GetAppHash.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintTypes(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0x8a
+	}
+	return len(dAtA) - i, nil
+}
+func (m *Response_GenerateFraudProof) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *Response_GenerateFraudProof) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.GenerateFraudProof != nil {
+		{
+			size, err := m.GenerateFraudProof.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintTypes(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0x92
+	}
+	return len(dAtA) - i, nil
+}
+func (m *Response_VerifyFraudProof) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *Response_VerifyFraudProof) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	if m.VerifyFraudProof != nil {
+		{
+			size, err := m.VerifyFraudProof.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintTypes(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0x9a
+	}
+	return len(dAtA) - i, nil
+}
 func (m *Response_BeginRecheckTx) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
@@ -2844,6 +3882,320 @@ func (m *ResponseEndRecheckTx) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = l
 	if m.Code != 0 {
 		i = encodeVarintTypes(dAtA, i, uint64(m.Code))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ResponseGetAppHash) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ResponseGetAppHash) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ResponseGetAppHash) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.AppHash) > 0 {
+		i -= len(m.AppHash)
+		copy(dAtA[i:], m.AppHash)
+		i = encodeVarintTypes(dAtA, i, uint64(len(m.AppHash)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ResponseGenerateFraudProof) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ResponseGenerateFraudProof) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ResponseGenerateFraudProof) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.FraudProof != nil {
+		{
+			size, err := m.FraudProof.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintTypes(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *ResponseVerifyFraudProof) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ResponseVerifyFraudProof) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ResponseVerifyFraudProof) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.Success {
+		i--
+		if m.Success {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *FraudProof) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *FraudProof) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *FraudProof) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.FraudulentEndBlock != nil {
+		{
+			size, err := m.FraudulentEndBlock.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintTypes(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x3a
+	}
+	if m.FraudulentDeliverTx != nil {
+		{
+			size, err := m.FraudulentDeliverTx.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintTypes(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x32
+	}
+	if m.FraudulentBeginBlock != nil {
+		{
+			size, err := m.FraudulentBeginBlock.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintTypes(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x2a
+	}
+	if len(m.StateWitness) > 0 {
+		for k := range m.StateWitness {
+			v := m.StateWitness[k]
+			baseI := i
+			if v != nil {
+				{
+					size, err := v.MarshalToSizedBuffer(dAtA[:i])
+					if err != nil {
+						return 0, err
+					}
+					i -= size
+					i = encodeVarintTypes(dAtA, i, uint64(size))
+				}
+				i--
+				dAtA[i] = 0x12
+			}
+			i -= len(k)
+			copy(dAtA[i:], k)
+			i = encodeVarintTypes(dAtA, i, uint64(len(k)))
+			i--
+			dAtA[i] = 0xa
+			i = encodeVarintTypes(dAtA, i, uint64(baseI-i))
+			i--
+			dAtA[i] = 0x22
+		}
+	}
+	if len(m.ExpectedValidAppHash) > 0 {
+		i -= len(m.ExpectedValidAppHash)
+		copy(dAtA[i:], m.ExpectedValidAppHash)
+		i = encodeVarintTypes(dAtA, i, uint64(len(m.ExpectedValidAppHash)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.PreStateAppHash) > 0 {
+		i -= len(m.PreStateAppHash)
+		copy(dAtA[i:], m.PreStateAppHash)
+		i = encodeVarintTypes(dAtA, i, uint64(len(m.PreStateAppHash)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.BlockHeight != 0 {
+		i = encodeVarintTypes(dAtA, i, uint64(m.BlockHeight))
+		i--
+		dAtA[i] = 0x8
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *StateWitness) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *StateWitness) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *StateWitness) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.WitnessData) > 0 {
+		for iNdEx := len(m.WitnessData) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.WitnessData[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintTypes(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x1a
+		}
+	}
+	if len(m.RootHash) > 0 {
+		i -= len(m.RootHash)
+		copy(dAtA[i:], m.RootHash)
+		i = encodeVarintTypes(dAtA, i, uint64(len(m.RootHash)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.Proof != nil {
+		{
+			size, err := m.Proof.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintTypes(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *WitnessData) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *WitnessData) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *WitnessData) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Proofs) > 0 {
+		for iNdEx := len(m.Proofs) - 1; iNdEx >= 0; iNdEx-- {
+			{
+				size, err := m.Proofs[iNdEx].MarshalToSizedBuffer(dAtA[:i])
+				if err != nil {
+					return 0, err
+				}
+				i -= size
+				i = encodeVarintTypes(dAtA, i, uint64(size))
+			}
+			i--
+			dAtA[i] = 0x22
+		}
+	}
+	if len(m.Value) > 0 {
+		i -= len(m.Value)
+		copy(dAtA[i:], m.Value)
+		i = encodeVarintTypes(dAtA, i, uint64(len(m.Value)))
+		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.Key) > 0 {
+		i -= len(m.Key)
+		copy(dAtA[i:], m.Key)
+		i = encodeVarintTypes(dAtA, i, uint64(len(m.Key)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if m.Operation != 0 {
+		i = encodeVarintTypes(dAtA, i, uint64(m.Operation))
 		i--
 		dAtA[i] = 0x8
 	}
@@ -3053,6 +4405,42 @@ func (m *Request_ApplySnapshotChunk) Size() (n int) {
 	}
 	return n
 }
+func (m *Request_GetAppHash) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.GetAppHash != nil {
+		l = m.GetAppHash.Size()
+		n += 2 + l + sovTypes(uint64(l))
+	}
+	return n
+}
+func (m *Request_GenerateFraudProof) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.GenerateFraudProof != nil {
+		l = m.GenerateFraudProof.Size()
+		n += 2 + l + sovTypes(uint64(l))
+	}
+	return n
+}
+func (m *Request_VerifyFraudProof) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.VerifyFraudProof != nil {
+		l = m.VerifyFraudProof.Size()
+		n += 2 + l + sovTypes(uint64(l))
+	}
+	return n
+}
 func (m *Request_BeginRecheckTx) Size() (n int) {
 	if m == nil {
 		return 0
@@ -3121,6 +4509,53 @@ func (m *RequestEndRecheckTx) Size() (n int) {
 	_ = l
 	if m.Height != 0 {
 		n += 1 + sovTypes(uint64(m.Height))
+	}
+	return n
+}
+
+func (m *RequestGetAppHash) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	return n
+}
+
+func (m *RequestGenerateFraudProof) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = m.BeginBlockRequest.Size()
+	n += 1 + l + sovTypes(uint64(l))
+	if len(m.DeliverTxRequests) > 0 {
+		for _, e := range m.DeliverTxRequests {
+			l = e.Size()
+			n += 1 + l + sovTypes(uint64(l))
+		}
+	}
+	if m.EndBlockRequest != nil {
+		l = m.EndBlockRequest.Size()
+		n += 1 + l + sovTypes(uint64(l))
+	}
+	return n
+}
+
+func (m *RequestVerifyFraudProof) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.FraudProof != nil {
+		l = m.FraudProof.Size()
+		n += 1 + l + sovTypes(uint64(l))
+	}
+	l = len(m.ExpectedValidAppHash)
+	if l > 0 {
+		n += 1 + l + sovTypes(uint64(l))
 	}
 	return n
 }
@@ -3329,6 +4764,42 @@ func (m *Response_ApplySnapshotChunk) Size() (n int) {
 	}
 	return n
 }
+func (m *Response_GetAppHash) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.GetAppHash != nil {
+		l = m.GetAppHash.Size()
+		n += 2 + l + sovTypes(uint64(l))
+	}
+	return n
+}
+func (m *Response_GenerateFraudProof) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.GenerateFraudProof != nil {
+		l = m.GenerateFraudProof.Size()
+		n += 2 + l + sovTypes(uint64(l))
+	}
+	return n
+}
+func (m *Response_VerifyFraudProof) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.VerifyFraudProof != nil {
+		l = m.VerifyFraudProof.Size()
+		n += 2 + l + sovTypes(uint64(l))
+	}
+	return n
+}
 func (m *Response_BeginRecheckTx) Size() (n int) {
 	if m == nil {
 		return 0
@@ -3424,6 +4895,138 @@ func (m *ResponseEndRecheckTx) Size() (n int) {
 	_ = l
 	if m.Code != 0 {
 		n += 1 + sovTypes(uint64(m.Code))
+	}
+	return n
+}
+
+func (m *ResponseGetAppHash) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.AppHash)
+	if l > 0 {
+		n += 1 + l + sovTypes(uint64(l))
+	}
+	return n
+}
+
+func (m *ResponseGenerateFraudProof) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.FraudProof != nil {
+		l = m.FraudProof.Size()
+		n += 1 + l + sovTypes(uint64(l))
+	}
+	return n
+}
+
+func (m *ResponseVerifyFraudProof) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Success {
+		n += 2
+	}
+	return n
+}
+
+func (m *FraudProof) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.BlockHeight != 0 {
+		n += 1 + sovTypes(uint64(m.BlockHeight))
+	}
+	l = len(m.PreStateAppHash)
+	if l > 0 {
+		n += 1 + l + sovTypes(uint64(l))
+	}
+	l = len(m.ExpectedValidAppHash)
+	if l > 0 {
+		n += 1 + l + sovTypes(uint64(l))
+	}
+	if len(m.StateWitness) > 0 {
+		for k, v := range m.StateWitness {
+			_ = k
+			_ = v
+			l = 0
+			if v != nil {
+				l = v.Size()
+				l += 1 + sovTypes(uint64(l))
+			}
+			mapEntrySize := 1 + len(k) + sovTypes(uint64(len(k))) + l
+			n += mapEntrySize + 1 + sovTypes(uint64(mapEntrySize))
+		}
+	}
+	if m.FraudulentBeginBlock != nil {
+		l = m.FraudulentBeginBlock.Size()
+		n += 1 + l + sovTypes(uint64(l))
+	}
+	if m.FraudulentDeliverTx != nil {
+		l = m.FraudulentDeliverTx.Size()
+		n += 1 + l + sovTypes(uint64(l))
+	}
+	if m.FraudulentEndBlock != nil {
+		l = m.FraudulentEndBlock.Size()
+		n += 1 + l + sovTypes(uint64(l))
+	}
+	return n
+}
+
+func (m *StateWitness) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Proof != nil {
+		l = m.Proof.Size()
+		n += 1 + l + sovTypes(uint64(l))
+	}
+	l = len(m.RootHash)
+	if l > 0 {
+		n += 1 + l + sovTypes(uint64(l))
+	}
+	if len(m.WitnessData) > 0 {
+		for _, e := range m.WitnessData {
+			l = e.Size()
+			n += 1 + l + sovTypes(uint64(l))
+		}
+	}
+	return n
+}
+
+func (m *WitnessData) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	if m.Operation != 0 {
+		n += 1 + sovTypes(uint64(m.Operation))
+	}
+	l = len(m.Key)
+	if l > 0 {
+		n += 1 + l + sovTypes(uint64(l))
+	}
+	l = len(m.Value)
+	if l > 0 {
+		n += 1 + l + sovTypes(uint64(l))
+	}
+	if len(m.Proofs) > 0 {
+		for _, e := range m.Proofs {
+			l = e.Size()
+			n += 1 + l + sovTypes(uint64(l))
+		}
 	}
 	return n
 }
@@ -3988,6 +5591,111 @@ func (m *Request) Unmarshal(dAtA []byte) error {
 			}
 			m.Value = &Request_ApplySnapshotChunk{v}
 			iNdEx = postIndex
+		case 16:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field GetAppHash", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &RequestGetAppHash{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.Value = &Request_GetAppHash{v}
+			iNdEx = postIndex
+		case 17:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field GenerateFraudProof", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &RequestGenerateFraudProof{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.Value = &Request_GenerateFraudProof{v}
+			iNdEx = postIndex
+		case 18:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field VerifyFraudProof", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &RequestVerifyFraudProof{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.Value = &Request_VerifyFraudProof{v}
+			iNdEx = postIndex
 		case 1000:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field BeginRecheckTx", wireType)
@@ -4427,6 +6135,329 @@ func (m *RequestEndRecheckTx) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTypes(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *RequestGetAppHash) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTypes
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: RequestGetAppHash: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: RequestGetAppHash: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTypes(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *RequestGenerateFraudProof) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTypes
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: RequestGenerateFraudProof: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: RequestGenerateFraudProof: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BeginBlockRequest", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if err := m.BeginBlockRequest.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field DeliverTxRequests", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.DeliverTxRequests = append(m.DeliverTxRequests, &types.RequestDeliverTx{})
+			if err := m.DeliverTxRequests[len(m.DeliverTxRequests)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field EndBlockRequest", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.EndBlockRequest == nil {
+				m.EndBlockRequest = &types.RequestEndBlock{}
+			}
+			if err := m.EndBlockRequest.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTypes(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *RequestVerifyFraudProof) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTypes
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: RequestVerifyFraudProof: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: RequestVerifyFraudProof: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FraudProof", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.FraudProof == nil {
+				m.FraudProof = &FraudProof{}
+			}
+			if err := m.FraudProof.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ExpectedValidAppHash", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ExpectedValidAppHash = append(m.ExpectedValidAppHash[:0], dAtA[iNdEx:postIndex]...)
+			if m.ExpectedValidAppHash == nil {
+				m.ExpectedValidAppHash = []byte{}
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipTypes(dAtA[iNdEx:])
@@ -5037,6 +7068,111 @@ func (m *Response) Unmarshal(dAtA []byte) error {
 			}
 			m.Value = &Response_ApplySnapshotChunk{v}
 			iNdEx = postIndex
+		case 17:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field GetAppHash", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &ResponseGetAppHash{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.Value = &Response_GetAppHash{v}
+			iNdEx = postIndex
+		case 18:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field GenerateFraudProof", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &ResponseGenerateFraudProof{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.Value = &Response_GenerateFraudProof{v}
+			iNdEx = postIndex
+		case 19:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field VerifyFraudProof", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			v := &ResponseVerifyFraudProof{}
+			if err := v.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			m.Value = &Response_VerifyFraudProof{v}
+			iNdEx = postIndex
 		case 1000:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field BeginRecheckTx", wireType)
@@ -5599,6 +7735,945 @@ func (m *ResponseEndRecheckTx) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTypes(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ResponseGetAppHash) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTypes
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ResponseGetAppHash: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ResponseGetAppHash: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AppHash", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AppHash = append(m.AppHash[:0], dAtA[iNdEx:postIndex]...)
+			if m.AppHash == nil {
+				m.AppHash = []byte{}
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTypes(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ResponseGenerateFraudProof) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTypes
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ResponseGenerateFraudProof: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ResponseGenerateFraudProof: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FraudProof", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.FraudProof == nil {
+				m.FraudProof = &FraudProof{}
+			}
+			if err := m.FraudProof.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTypes(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ResponseVerifyFraudProof) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTypes
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ResponseVerifyFraudProof: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ResponseVerifyFraudProof: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Success", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.Success = bool(v != 0)
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTypes(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *FraudProof) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTypes
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: FraudProof: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: FraudProof: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BlockHeight", wireType)
+			}
+			m.BlockHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.BlockHeight |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field PreStateAppHash", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.PreStateAppHash = append(m.PreStateAppHash[:0], dAtA[iNdEx:postIndex]...)
+			if m.PreStateAppHash == nil {
+				m.PreStateAppHash = []byte{}
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ExpectedValidAppHash", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ExpectedValidAppHash = append(m.ExpectedValidAppHash[:0], dAtA[iNdEx:postIndex]...)
+			if m.ExpectedValidAppHash == nil {
+				m.ExpectedValidAppHash = []byte{}
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field StateWitness", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.StateWitness == nil {
+				m.StateWitness = make(map[string]*StateWitness)
+			}
+			var mapkey string
+			var mapvalue *StateWitness
+			for iNdEx < postIndex {
+				entryPreIndex := iNdEx
+				var wire uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowTypes
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					wire |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				fieldNum := int32(wire >> 3)
+				if fieldNum == 1 {
+					var stringLenmapkey uint64
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowTypes
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						stringLenmapkey |= uint64(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					intStringLenmapkey := int(stringLenmapkey)
+					if intStringLenmapkey < 0 {
+						return ErrInvalidLengthTypes
+					}
+					postStringIndexmapkey := iNdEx + intStringLenmapkey
+					if postStringIndexmapkey < 0 {
+						return ErrInvalidLengthTypes
+					}
+					if postStringIndexmapkey > l {
+						return io.ErrUnexpectedEOF
+					}
+					mapkey = string(dAtA[iNdEx:postStringIndexmapkey])
+					iNdEx = postStringIndexmapkey
+				} else if fieldNum == 2 {
+					var mapmsglen int
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowTypes
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						mapmsglen |= int(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					if mapmsglen < 0 {
+						return ErrInvalidLengthTypes
+					}
+					postmsgIndex := iNdEx + mapmsglen
+					if postmsgIndex < 0 {
+						return ErrInvalidLengthTypes
+					}
+					if postmsgIndex > l {
+						return io.ErrUnexpectedEOF
+					}
+					mapvalue = &StateWitness{}
+					if err := mapvalue.Unmarshal(dAtA[iNdEx:postmsgIndex]); err != nil {
+						return err
+					}
+					iNdEx = postmsgIndex
+				} else {
+					iNdEx = entryPreIndex
+					skippy, err := skipTypes(dAtA[iNdEx:])
+					if err != nil {
+						return err
+					}
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
+						return ErrInvalidLengthTypes
+					}
+					if (iNdEx + skippy) > postIndex {
+						return io.ErrUnexpectedEOF
+					}
+					iNdEx += skippy
+				}
+			}
+			m.StateWitness[mapkey] = mapvalue
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FraudulentBeginBlock", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.FraudulentBeginBlock == nil {
+				m.FraudulentBeginBlock = &RequestBeginBlock{}
+			}
+			if err := m.FraudulentBeginBlock.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FraudulentDeliverTx", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.FraudulentDeliverTx == nil {
+				m.FraudulentDeliverTx = &types.RequestDeliverTx{}
+			}
+			if err := m.FraudulentDeliverTx.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FraudulentEndBlock", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.FraudulentEndBlock == nil {
+				m.FraudulentEndBlock = &types.RequestEndBlock{}
+			}
+			if err := m.FraudulentEndBlock.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTypes(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *StateWitness) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTypes
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: StateWitness: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: StateWitness: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Proof", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Proof == nil {
+				m.Proof = &crypto.ProofOp{}
+			}
+			if err := m.Proof.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field RootHash", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.RootHash = append(m.RootHash[:0], dAtA[iNdEx:postIndex]...)
+			if m.RootHash == nil {
+				m.RootHash = []byte{}
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field WitnessData", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.WitnessData = append(m.WitnessData, &WitnessData{})
+			if err := m.WitnessData[len(m.WitnessData)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTypes(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *WitnessData) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTypes
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: WitnessData: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: WitnessData: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Operation", wireType)
+			}
+			m.Operation = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Operation |= Operation(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Key", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Key = append(m.Key[:0], dAtA[iNdEx:postIndex]...)
+			if m.Key == nil {
+				m.Key = []byte{}
+			}
+			iNdEx = postIndex
+		case 3:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Value", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Value = append(m.Value[:0], dAtA[iNdEx:postIndex]...)
+			if m.Value == nil {
+				m.Value = []byte{}
+			}
+			iNdEx = postIndex
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Proofs", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTypes
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthTypes
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthTypes
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Proofs = append(m.Proofs, &crypto.ProofOp{})
+			if err := m.Proofs[len(m.Proofs)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := skipTypes(dAtA[iNdEx:])
